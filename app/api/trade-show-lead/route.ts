@@ -236,6 +236,15 @@ export async function POST(request: NextRequest) {
           const tradeshowInfo = tradeshowSlug ? ` - ${tradeshowSlug}` : ""
           const repInfo = repName ? ` (Rep: ${repName})` : ""
 
+          // Convert numberOfStaff to integer if possible
+          let employeeCount = null
+          if (numberOfStaff) {
+            const match = numberOfStaff.match(/\d+/)
+            if (match) {
+              employeeCount = parseInt(match[0])
+            }
+          }
+
           const leadData = {
             subject: `Tradeshow Lead: ${name}${tradeshowInfo}`,
             firstname: name.split(" ")[0] || name,
@@ -243,9 +252,10 @@ export async function POST(request: NextRequest) {
             emailaddress1: email,
             companyname: company || "",
             jobtitle: role || "",
-            description: `Badge Photo: ${photoUrl}\n\nRegion: ${region}\nRole: ${role}\nCompany: ${company}\nCurrent Respirator: ${currentRespirator}\nWork Environment: ${workEnvironment}\nNumber of Staff: ${numberOfStaff}\nComments: ${comments}${tradeshowInfo}${repInfo}`,
+            description: `Badge Photo: ${photoUrl}\n\nCurrent Respirator: ${currentRespirator || "Not specified"}\nWork Environment: ${workEnvironment || "Not specified"}\nRegion: ${region || "Not specified"}\nComments: ${comments || "None"}${tradeshowInfo}${repInfo}`,
             mobilephone: "",
             address1_country: region || "",
+            numberofemployees: employeeCount,
           }
 
           // Create lead in Dynamics 365
