@@ -27,6 +27,7 @@ interface Tradeshow {
   end_date: string
   is_active: boolean
   submission_count: string
+  created_at: string
 }
 
 export default function RepDashboard() {
@@ -35,6 +36,8 @@ export default function RepDashboard() {
   const [tradeshows, setTradeshows] = useState<Tradeshow[]>([])
   const [loading, setLoading] = useState(true)
   const [copiedId, setCopiedId] = useState<number | null>(null)
+  const [sortBy, setSortBy] = useState<string>("newest")
+  const [filterBy, setFilterBy] = useState<string>("all")
 
   useEffect(() => {
     if (status === "loading") return
@@ -80,6 +83,35 @@ export default function RepDashboard() {
     setTimeout(() => setCopiedId(null), 2000)
   }
 
+  const getFilteredAndSortedTradeshows = () => {
+    let filtered = [...tradeshows]
+
+    // Apply filter
+    if (filterBy === "with-leads") {
+      filtered = filtered.filter((t) => parseInt(t.submission_count) > 0)
+    }
+
+    // Apply sort
+    filtered.sort((a, b) => {
+      switch (sortBy) {
+        case "newest":
+          return new Date(b.created_at).getTime() - new Date(a.created_at).getTime()
+        case "oldest":
+          return new Date(a.created_at).getTime() - new Date(b.created_at).getTime()
+        case "most-leads":
+          return parseInt(b.submission_count) - parseInt(a.submission_count)
+        case "alphabetical":
+          return a.name.localeCompare(b.name)
+        default:
+          return 0
+      }
+    })
+
+    return filtered
+  }
+
+  const displayedTradeshows = getFilteredAndSortedTradeshows()
+
   if (loading) {
     return (
       <div className="min-h-screen bg-gray-50 flex items-center justify-center">
@@ -120,8 +152,53 @@ export default function RepDashboard() {
           </CardContent>
         </Card>
 
+        {/* Sort and Filter Controls */}
+        {tradeshows.length > 0 && (
+          <Card className="mb-6">
+            <CardContent className="p-4">
+              <div className="flex flex-wrap gap-4 items-center">
+                <div className="flex items-center gap-2">
+                  <label htmlFor="sort" className="text-sm font-semibold text-gray-700">
+                    Sort by:
+                  </label>
+                  <select
+                    id="sort"
+                    value={sortBy}
+                    onChange={(e) => setSortBy(e.target.value)}
+                    className="px-3 py-2 border border-gray-300 rounded-lg text-sm focus:outline-none focus:ring-2 focus:ring-[rgb(27,208,118)] focus:border-transparent"
+                  >
+                    <option value="newest">Newest First</option>
+                    <option value="oldest">Oldest First</option>
+                    <option value="most-leads">Most Leads</option>
+                    <option value="alphabetical">Alphabetical</option>
+                  </select>
+                </div>
+
+                <div className="flex items-center gap-2">
+                  <label htmlFor="filter" className="text-sm font-semibold text-gray-700">
+                    Show:
+                  </label>
+                  <select
+                    id="filter"
+                    value={filterBy}
+                    onChange={(e) => setFilterBy(e.target.value)}
+                    className="px-3 py-2 border border-gray-300 rounded-lg text-sm focus:outline-none focus:ring-2 focus:ring-[rgb(27,208,118)] focus:border-transparent"
+                  >
+                    <option value="all">All Tradeshows</option>
+                    <option value="with-leads">Only With My Leads</option>
+                  </select>
+                </div>
+
+                <div className="ml-auto text-sm text-gray-600">
+                  Showing {displayedTradeshows.length} of {tradeshows.length} tradeshows
+                </div>
+              </div>
+            </CardContent>
+          </Card>
+        )}
+
         {/* Tradeshows Grid */}
-        {tradeshows.length === 0 ? (
+        {displayedTradeshows.length === 0 && tradeshows.length === 0 ? (
           <Card>
             <CardContent className="p-12 text-center">
               <Calendar className="h-12 w-12 mx-auto mb-4 text-gray-400" />
@@ -131,9 +208,26 @@ export default function RepDashboard() {
               </p>
             </CardContent>
           </Card>
+        ) : displayedTradeshows.length === 0 ? (
+          <Card>
+            <CardContent className="p-12 text-center">
+              <Users className="h-12 w-12 mx-auto mb-4 text-gray-400" />
+              <p className="text-lg font-medium text-gray-900">No Tradeshows Match Your Filters</p>
+              <p className="text-sm text-gray-500 mt-2">
+                Try adjusting your sort or filter options
+              </p>
+              <Button
+                onClick={() => setFilterBy("all")}
+                variant="outline"
+                className="mt-4"
+              >
+                Show All Tradeshows
+              </Button>
+            </CardContent>
+          </Card>
         ) : (
           <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
-            {tradeshows.map((tradeshow) => (
+            {displayedTradeshows.map((tradeshow) => (
               <Card key={tradeshow.id} className="hover:shadow-lg transition-shadow">
                 <CardHeader>
                   <div className="flex items-start justify-between mb-2">
