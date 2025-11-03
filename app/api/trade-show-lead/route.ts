@@ -97,8 +97,20 @@ export async function POST(request: NextRequest) {
         phone: "",
         fieldValues: [
           {
-            field: "8", // Company (existing field)
+            field: "1", // Country (using for Region)
+            value: region || "",
+          },
+          {
+            field: "4", // Job Title (using for Role)
+            value: role || "",
+          },
+          {
+            field: "8", // Company
             value: company || "",
+          },
+          {
+            field: "9", // Comments
+            value: comments || "",
           },
           {
             field: "11", // Current Respirator
@@ -140,11 +152,15 @@ export async function POST(request: NextRequest) {
     const acResult = await acResponse.json()
     const contactId = acResult.contact?.id
 
-    // Add note to contact with badge photo information
+    // Add note to contact with badge photo URL only
+    // All other form data is now stored in custom fields
     if (contactId) {
+      const repInfo = repCode ? `\nCaptured by Rep: ${repCode}` : ""
+      const tradeshowInfo = tradeshowSlug ? `\nTradeshow: ${tradeshowSlug}` : ""
+
       const noteData = {
         note: {
-          note: `Trade Show Lead - Badge Photo: ${badgePhoto.name} (${(badgePhoto.size / 1024).toFixed(2)} KB)\n\nBadge Photo URL: ${photoUrl}\n\nForm Details:\nRegion: ${region || "N/A"}\nCompany: ${company || "N/A"}\nRole: ${role || "N/A"}\nWork Environment: ${workEnvironment || "N/A"}\nNumber of Staff: ${numberOfStaff || "N/A"}\nCurrent Respirator: ${currentRespirator || "N/A"}${comments ? `\n\nDiscussion Comments:\n${comments}` : ""}`,
+          note: `Trade Show Lead Submission\n\nBadge Photo: ${badgePhoto.name} (${(badgePhoto.size / 1024).toFixed(2)} KB)\nBadge Photo URL: ${photoUrl}${tradeshowInfo}${repInfo}`,
           relid: contactId,
           reltype: "Subscriber",
         },
