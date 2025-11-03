@@ -98,6 +98,55 @@ export default function TradeshowDetailPage() {
     setTimeout(() => setCopied(false), 2000)
   }
 
+  const openEditModal = () => {
+    if (!tradeshow) return
+
+    setEditFormData({
+      name: tradeshow.name,
+      description: tradeshow.description || "",
+      location: tradeshow.location || "",
+      startDate: tradeshow.start_date ? tradeshow.start_date.split("T")[0] : "",
+      endDate: tradeshow.end_date ? tradeshow.end_date.split("T")[0] : "",
+      isActive: tradeshow.is_active,
+      activeCampaignTagId: tradeshow.tags.find(t => t.tag_name === "activecampaign_tag_id")?.tag_value || "",
+    })
+    setShowEditModal(true)
+  }
+
+  const handleEditSubmit = async (e: React.FormEvent) => {
+    e.preventDefault()
+    setIsSubmitting(true)
+
+    try {
+      const response = await fetch(`/api/tradeshows/${params.id}`, {
+        method: "PATCH",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({
+          name: editFormData.name,
+          description: editFormData.description,
+          location: editFormData.location,
+          startDate: editFormData.startDate || null,
+          endDate: editFormData.endDate || null,
+          isActive: editFormData.isActive,
+          activeCampaignTagId: editFormData.activeCampaignTagId || null,
+        }),
+      })
+
+      if (response.ok) {
+        setShowEditModal(false)
+        fetchTradeshowDetails() // Refresh data
+      } else {
+        const error = await response.json()
+        alert(error.error || "Failed to update tradeshow")
+      }
+    } catch (error) {
+      console.error("Error updating tradeshow:", error)
+      alert("An error occurred while updating")
+    } finally {
+      setIsSubmitting(false)
+    }
+  }
+
   if (loading) {
     return (
       <div className="min-h-screen bg-gray-50 flex items-center justify-center">
@@ -173,6 +222,14 @@ export default function TradeshowDetailPage() {
                   {tradeshow.description || "No description"}
                 </CardDescription>
               </div>
+              <Button
+                variant="outline"
+                onClick={openEditModal}
+                className="flex items-center gap-2"
+              >
+                <Edit className="h-4 w-4" />
+                Edit
+              </Button>
             </div>
           </CardHeader>
           <CardContent>
@@ -309,6 +366,145 @@ export default function TradeshowDetailPage() {
           </CardContent>
         </Card>
       </div>
+
+      {/* Edit Modal */}
+      {showEditModal && (
+        <div className="fixed inset-0 bg-black/70 backdrop-blur-sm flex items-center justify-center z-50 p-4">
+          <Card className="w-full max-w-2xl max-h-[90vh] overflow-y-auto bg-white shadow-2xl border-0">
+            <CardHeader className="bg-white border-b pb-4">
+              <div className="flex items-center justify-between">
+                <CardTitle className="text-2xl font-bold text-gray-900">Edit Tradeshow</CardTitle>
+                <Button
+                  variant="ghost"
+                  size="sm"
+                  onClick={() => setShowEditModal(false)}
+                  className="hover:bg-gray-100"
+                >
+                  <X className="h-5 w-5" />
+                </Button>
+              </div>
+              <CardDescription className="text-gray-600 text-base mt-2">
+                Update the details for this tradeshow event
+              </CardDescription>
+            </CardHeader>
+            <CardContent className="pt-6">
+              <form onSubmit={handleEditSubmit} className="space-y-5">
+                <div>
+                  <label className="block text-sm font-semibold text-gray-900 mb-2">Name *</label>
+                  <input
+                    type="text"
+                    value={editFormData.name}
+                    onChange={(e) => setEditFormData({ ...editFormData, name: e.target.value })}
+                    className="w-full px-4 py-2 border-2 border-gray-300 rounded-lg focus:ring-2 focus:ring-[rgb(27,208,118)] focus:border-[rgb(27,208,118)] outline-none text-gray-900"
+                    required
+                  />
+                </div>
+
+                <div>
+                  <label className="block text-sm font-semibold text-gray-900 mb-2">Description</label>
+                  <textarea
+                    value={editFormData.description}
+                    onChange={(e) => setEditFormData({ ...editFormData, description: e.target.value })}
+                    className="w-full px-4 py-2 border-2 border-gray-300 rounded-lg focus:ring-2 focus:ring-[rgb(27,208,118)] focus:border-[rgb(27,208,118)] outline-none text-gray-900"
+                    rows={3}
+                  />
+                </div>
+
+                <div>
+                  <label className="block text-sm font-semibold text-gray-900 mb-2">Location</label>
+                  <input
+                    type="text"
+                    value={editFormData.location}
+                    onChange={(e) => setEditFormData({ ...editFormData, location: e.target.value })}
+                    className="w-full px-4 py-2 border-2 border-gray-300 rounded-lg focus:ring-2 focus:ring-[rgb(27,208,118)] focus:border-[rgb(27,208,118)] outline-none text-gray-900"
+                  />
+                </div>
+
+                <div className="grid grid-cols-2 gap-4">
+                  <div>
+                    <label className="block text-sm font-semibold text-gray-900 mb-2">Start Date</label>
+                    <input
+                      type="date"
+                      value={editFormData.startDate}
+                      onChange={(e) => setEditFormData({ ...editFormData, startDate: e.target.value })}
+                      className="w-full px-4 py-2 border-2 border-gray-300 rounded-lg focus:ring-2 focus:ring-[rgb(27,208,118)] focus:border-[rgb(27,208,118)] outline-none text-gray-900"
+                    />
+                  </div>
+                  <div>
+                    <label className="block text-sm font-semibold text-gray-900 mb-2">End Date</label>
+                    <input
+                      type="date"
+                      value={editFormData.endDate}
+                      onChange={(e) => setEditFormData({ ...editFormData, endDate: e.target.value })}
+                      className="w-full px-4 py-2 border-2 border-gray-300 rounded-lg focus:ring-2 focus:ring-[rgb(27,208,118)] focus:border-[rgb(27,208,118)] outline-none text-gray-900"
+                    />
+                  </div>
+                </div>
+
+                <div>
+                  <label className="flex items-center gap-2 cursor-pointer">
+                    <input
+                      type="checkbox"
+                      checked={editFormData.isActive}
+                      onChange={(e) => setEditFormData({ ...editFormData, isActive: e.target.checked })}
+                      className="w-4 h-4 text-[rgb(27,208,118)] border-gray-300 rounded focus:ring-[rgb(27,208,118)]"
+                    />
+                    <span className="text-sm font-semibold text-gray-900">Active (visible to reps)</span>
+                  </label>
+                </div>
+
+                <div>
+                  <label className="block text-sm font-semibold text-gray-900 mb-2">
+                    ActiveCampaign Tag ID
+                  </label>
+                  <input
+                    type="text"
+                    value={editFormData.activeCampaignTagId}
+                    onChange={(e) => setEditFormData({ ...editFormData, activeCampaignTagId: e.target.value })}
+                    className="w-full px-4 py-2 border-2 border-gray-300 rounded-lg focus:ring-2 focus:ring-[rgb(27,208,118)] focus:border-[rgb(27,208,118)] outline-none text-gray-900"
+                    placeholder="e.g., 7"
+                  />
+                  <p className="text-xs text-gray-500 mt-1">
+                    Optional: Update the ActiveCampaign tag ID for this tradeshow
+                  </p>
+                </div>
+
+                <div className="bg-amber-50 border border-amber-200 rounded-lg p-4">
+                  <p className="text-sm text-amber-900">
+                    <strong>Note:</strong> Changing the name will not update the slug or URL. The form URL will remain the same.
+                  </p>
+                </div>
+
+                <div className="flex gap-4 pt-6 border-t">
+                  <Button
+                    type="button"
+                    variant="outline"
+                    onClick={() => setShowEditModal(false)}
+                    className="flex-1 border-2 hover:bg-gray-50"
+                    disabled={isSubmitting}
+                  >
+                    Cancel
+                  </Button>
+                  <Button
+                    type="submit"
+                    disabled={isSubmitting}
+                    className="flex-1 bg-[rgb(27,208,118)] hover:bg-[rgb(27,208,118)]/90 text-white"
+                  >
+                    {isSubmitting ? (
+                      <>
+                        <Loader2 className="mr-2 h-4 w-4 animate-spin" />
+                        Saving...
+                      </>
+                    ) : (
+                      "Save Changes"
+                    )}
+                  </Button>
+                </div>
+              </form>
+            </CardContent>
+          </Card>
+        </div>
+      )}
     </div>
   )
 }
