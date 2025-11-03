@@ -45,12 +45,13 @@ export async function POST(request: NextRequest) {
       }
     }
 
-    // Look up rep user ID from rep code
+    // Look up rep user ID and name from rep code
     let repUserId: number | null = null
+    let repName: string | null = null
 
     if (repCode) {
       const reps = await sql`
-        SELECT id
+        SELECT id, name
         FROM users
         WHERE rep_code = ${repCode} AND role = 'rep'
         LIMIT 1
@@ -58,6 +59,7 @@ export async function POST(request: NextRequest) {
 
       if (reps.length > 0) {
         repUserId = reps[0].id
+        repName = reps[0].name
       }
     }
 
@@ -124,6 +126,10 @@ export async function POST(request: NextRequest) {
             field: "13", // Number of Staff
             value: numberOfStaff || "",
           },
+          {
+            field: "14", // Sales Rep
+            value: repName || "",
+          },
         ],
       },
     }
@@ -155,7 +161,7 @@ export async function POST(request: NextRequest) {
     // Add note to contact with badge photo URL only
     // All other form data is now stored in custom fields
     if (contactId) {
-      const repInfo = repCode ? `\nCaptured by Rep: ${repCode}` : ""
+      const repInfo = repName ? `\nCaptured by Rep: ${repName} (${repCode})` : ""
       const tradeshowInfo = tradeshowSlug ? `\nTradeshow: ${tradeshowSlug}` : ""
 
       const noteData = {
