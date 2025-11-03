@@ -40,6 +40,8 @@ export default function AdminDashboard() {
   const [loading, setLoading] = useState(true)
   const [showCreateModal, setShowCreateModal] = useState(false)
   const [creating, setCreating] = useState(false)
+  const [sortBy, setSortBy] = useState<string>("newest")
+  const [filterBy, setFilterBy] = useState<string>("all")
 
   // Form state
   const [formData, setFormData] = useState({
@@ -137,6 +139,39 @@ export default function AdminDashboard() {
     setFormData({ ...formData, name, slug })
   }
 
+  const getFilteredAndSortedTradeshows = () => {
+    let filtered = [...tradeshows]
+
+    // Apply filter
+    if (filterBy === "active") {
+      filtered = filtered.filter((t) => t.is_active)
+    } else if (filterBy === "inactive") {
+      filtered = filtered.filter((t) => !t.is_active)
+    } else if (filterBy === "with-submissions") {
+      filtered = filtered.filter((t) => parseInt(t.submission_count) > 0)
+    }
+
+    // Apply sort
+    filtered.sort((a, b) => {
+      switch (sortBy) {
+        case "newest":
+          return new Date(b.created_at).getTime() - new Date(a.created_at).getTime()
+        case "oldest":
+          return new Date(a.created_at).getTime() - new Date(b.created_at).getTime()
+        case "most-submissions":
+          return parseInt(b.submission_count) - parseInt(a.submission_count)
+        case "alphabetical":
+          return a.name.localeCompare(b.name)
+        default:
+          return 0
+      }
+    })
+
+    return filtered
+  }
+
+  const displayedTradeshows = getFilteredAndSortedTradeshows()
+
   if (loading) {
     return (
       <div className="min-h-screen bg-gray-50 flex items-center justify-center">
@@ -226,9 +261,74 @@ export default function AdminDashboard() {
           </Button>
         </div>
 
+        {/* Sort and Filter Controls */}
+        {tradeshows.length > 0 && (
+          <Card className="mb-6">
+            <CardContent className="p-4">
+              <div className="flex flex-wrap gap-4 items-center">
+                <div className="flex items-center gap-2">
+                  <label htmlFor="admin-sort" className="text-sm font-semibold text-gray-700">
+                    Sort by:
+                  </label>
+                  <select
+                    id="admin-sort"
+                    value={sortBy}
+                    onChange={(e) => setSortBy(e.target.value)}
+                    className="px-3 py-2 border border-gray-300 rounded-lg text-sm focus:outline-none focus:ring-2 focus:ring-[rgb(27,208,118)] focus:border-transparent"
+                  >
+                    <option value="newest">Newest First</option>
+                    <option value="oldest">Oldest First</option>
+                    <option value="most-submissions">Most Submissions</option>
+                    <option value="alphabetical">Alphabetical</option>
+                  </select>
+                </div>
+
+                <div className="flex items-center gap-2">
+                  <label htmlFor="admin-filter" className="text-sm font-semibold text-gray-700">
+                    Show:
+                  </label>
+                  <select
+                    id="admin-filter"
+                    value={filterBy}
+                    onChange={(e) => setFilterBy(e.target.value)}
+                    className="px-3 py-2 border border-gray-300 rounded-lg text-sm focus:outline-none focus:ring-2 focus:ring-[rgb(27,208,118)] focus:border-transparent"
+                  >
+                    <option value="all">All Tradeshows</option>
+                    <option value="active">Active Only</option>
+                    <option value="inactive">Inactive Only</option>
+                    <option value="with-submissions">With Submissions</option>
+                  </select>
+                </div>
+
+                <div className="ml-auto text-sm text-gray-600">
+                  Showing {displayedTradeshows.length} of {tradeshows.length} tradeshows
+                </div>
+              </div>
+            </CardContent>
+          </Card>
+        )}
+
         {/* Tradeshows List */}
         <div className="grid grid-cols-1 gap-6">
-          {tradeshows.map((tradeshow) => (
+          {displayedTradeshows.length === 0 && tradeshows.length > 0 ? (
+            <Card>
+              <CardContent className="p-12 text-center">
+                <Eye className="h-12 w-12 mx-auto mb-4 text-gray-400" />
+                <p className="text-lg font-medium text-gray-900">No Tradeshows Match Your Filters</p>
+                <p className="text-sm text-gray-500 mt-2">
+                  Try adjusting your sort or filter options
+                </p>
+                <Button
+                  onClick={() => setFilterBy("all")}
+                  variant="outline"
+                  className="mt-4"
+                >
+                  Show All Tradeshows
+                </Button>
+              </CardContent>
+            </Card>
+          ) : (
+            displayedTradeshows.map((tradeshow) => (
             <Card
               key={tradeshow.id}
               className="hover:shadow-lg transition-shadow cursor-pointer"
@@ -283,7 +383,8 @@ export default function AdminDashboard() {
                 </div>
               </CardContent>
             </Card>
-          ))}
+          ))
+          )}
         </div>
       </div>
 
