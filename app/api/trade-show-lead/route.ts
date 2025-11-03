@@ -15,10 +15,50 @@ export async function POST(request: NextRequest) {
     const workEnvironment = formData.get("workEnvironment") as string
     const numberOfStaff = formData.get("numberOfStaff") as string
     const badgePhoto = formData.get("badgePhoto") as File
+    const tradeshowSlug = formData.get("tradeshowSlug") as string
+    const repCode = formData.get("repCode") as string | null
 
     // Validate required fields
     if (!email || !name || !badgePhoto) {
       return NextResponse.json({ error: "Missing required fields" }, { status: 400 })
+    }
+
+    // Initialize SQL connection
+    const sql = neon(process.env.DATABASE_URL!)
+
+    // Look up tradeshow ID from slug
+    let tradeshowId: number | null = null
+    let activeCampaignTagId: string | null = null
+
+    if (tradeshowSlug) {
+      const tradeshows = await sql`
+        SELECT t.id, tt.tag_value as activecampaign_tag_id
+        FROM tradeshows t
+        LEFT JOIN tradeshow_tags tt ON t.id = tt.tradeshow_id AND tt.tag_name = 'activecampaign_tag_id'
+        WHERE t.slug = ${tradeshowSlug}
+        LIMIT 1
+      `
+
+      if (tradeshows.length > 0) {
+        tradeshowId = tradeshows[0].id
+        activeCampaignTagId = tradeshows[0].activecampaign_tag_id
+      }
+    }
+
+    // Look up rep user ID from rep code
+    let repUserId: number | null = null
+
+    if (repCode) {
+      const reps = await sql`
+        SELECT id
+        FROM users
+        WHERE rep_code = ${repCode} AND role = 'rep'
+        LIMIT 1
+      `
+
+      if (reps.length > 0) {
+        repUserId = reps[0].id
+      }
     }
 
     // Get ActiveCampaign credentials from environment variables
@@ -38,12 +78,10 @@ export async function POST(request: NextRequest) {
     const bytes = await badgePhoto.arrayBuffer()
     const buffer = Buffer.from(bytes)
 
-    // Save badge photo to Neon DB as binary (bytea)
-    const sql = neon(process.env.DATABASE_URL!)
-
+    // Save badge photo to Neon DB as binary (bytea) with tradeshow_id and submitted_by_rep
     const photoResult = await sql`
-      INSERT INTO badge_photos (contact_email, contact_name, filename, mime_type, file_size, image_data, form_source)
-      VALUES (${email}, ${name}, ${badgePhoto.name}, ${badgePhoto.type}, ${badgePhoto.size}, ${buffer}, 'trade-show-lead')
+      INSERT INTO badge_photos (contact_email, contact_name, filename, mime_type, file_size, image_data, form_source, tradeshow_id, submitted_by_rep)
+      VALUES (${email}, ${name}, ${badgePhoto.name}, ${badgePhoto.type}, ${badgePhoto.size}, ${buffer}, 'trade-show-lead', ${tradeshowId}, ${repUserId})
       RETURNING id
     `
 
@@ -122,12 +160,12 @@ export async function POST(request: NextRequest) {
       })
     }
 
-    // Tag the contact with "canadianfrench show"
-    if (contactId) {
+    // Tag the contact with the tradeshow's ActiveCampaign tag (if configured)
+    if (contactId && activeCampaignTagId) {
       const tagData = {
         contactTag: {
           contact: contactId,
-          tag: "6", // canadianfrench show tag
+          tag: activeCampaignTagId,
         },
       }
 

@@ -79,7 +79,7 @@ export default function TradeshowDetailPage() {
   }
 
   const copyFormUrl = () => {
-    const formUrl = `${window.location.origin}/trade-show-lead?tradeshow=${tradeshow?.slug}`
+    const formUrl = `${window.location.origin}/trade-show-lead/${tradeshow?.slug}`
     navigator.clipboard.writeText(formUrl)
     setCopied(true)
     setTimeout(() => setCopied(false), 2000)
@@ -112,7 +112,7 @@ export default function TradeshowDetailPage() {
     )
   }
 
-  const formUrl = `${typeof window !== "undefined" ? window.location.origin : ""}/trade-show-lead?tradeshow=${tradeshow.slug}`
+  const formUrl = `${typeof window !== "undefined" ? window.location.origin : ""}/trade-show-lead/${tradeshow.slug}`
 
   return (
     <div className="min-h-screen bg-gray-50">
