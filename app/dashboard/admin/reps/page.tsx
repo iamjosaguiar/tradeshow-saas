@@ -29,6 +29,12 @@ interface Rep {
   last_login: string | null
 }
 
+interface DynamicsUser {
+  id: string
+  name: string
+  email: string
+}
+
 export default function RepsManagementPage() {
   const { data: session, status } = useSession()
   const router = useRouter()
@@ -38,6 +44,8 @@ export default function RepsManagementPage() {
   const [modalMode, setModalMode] = useState<"create" | "edit">("create")
   const [processing, setProcessing] = useState(false)
   const [showPassword, setShowPassword] = useState(false)
+  const [dynamicsUsers, setDynamicsUsers] = useState<DynamicsUser[]>([])
+  const [loadingDynamicsUsers, setLoadingDynamicsUsers] = useState(false)
 
   // Form state
   const [formData, setFormData] = useState({
@@ -79,6 +87,24 @@ export default function RepsManagementPage() {
     }
   }
 
+  const fetchDynamicsUsers = async () => {
+    setLoadingDynamicsUsers(true)
+    try {
+      const response = await fetch("/api/dynamics/users")
+      if (response.ok) {
+        const data = await response.json()
+        setDynamicsUsers(data)
+      } else {
+        console.error("Failed to fetch Dynamics users")
+        // Don't show error to user, just log it
+      }
+    } catch (error) {
+      console.error("Error fetching Dynamics users:", error)
+    } finally {
+      setLoadingDynamicsUsers(false)
+    }
+  }
+
   const resetForm = () => {
     setFormData({
       id: 0,
@@ -95,6 +121,7 @@ export default function RepsManagementPage() {
     resetForm()
     setModalMode("create")
     setShowModal(true)
+    fetchDynamicsUsers()
   }
 
   const handleEdit = (rep: Rep) => {
@@ -108,6 +135,7 @@ export default function RepsManagementPage() {
     })
     setModalMode("edit")
     setShowModal(true)
+    fetchDynamicsUsers()
   }
 
   const handleSubmit = async (e: React.FormEvent) => {
@@ -431,20 +459,32 @@ export default function RepsManagementPage() {
 
                 <div>
                   <label className="block text-sm font-semibold text-gray-900 mb-2">
-                    Dynamics 365 User ID
+                    Dynamics 365 User
                   </label>
-                  <input
-                    type="text"
-                    value={formData.dynamics_user_id}
-                    onChange={(e) =>
-                      setFormData({ ...formData, dynamics_user_id: e.target.value })
-                    }
-                    className="w-full px-4 py-2 border-2 border-gray-300 rounded-lg focus:ring-2 focus:ring-[rgb(27,208,118)] focus:border-[rgb(27,208,118)] outline-none text-gray-900 font-mono"
-                    placeholder="00000000-0000-0000-0000-000000000000"
-                  />
+                  {loadingDynamicsUsers ? (
+                    <div className="w-full px-4 py-2 border-2 border-gray-300 rounded-lg bg-gray-50 flex items-center gap-2 text-gray-500">
+                      <Loader2 className="h-4 w-4 animate-spin" />
+                      Loading Dynamics 365 users...
+                    </div>
+                  ) : (
+                    <select
+                      value={formData.dynamics_user_id}
+                      onChange={(e) =>
+                        setFormData({ ...formData, dynamics_user_id: e.target.value })
+                      }
+                      className="w-full px-4 py-2 border-2 border-gray-300 rounded-lg focus:ring-2 focus:ring-[rgb(27,208,118)] focus:border-[rgb(27,208,118)] outline-none text-gray-900"
+                    >
+                      <option value="">-- Not Assigned --</option>
+                      {dynamicsUsers.map((user) => (
+                        <option key={user.id} value={user.id}>
+                          {user.name} {user.email ? `(${user.email})` : ""}
+                        </option>
+                      ))}
+                    </select>
+                  )}
                   <p className="text-xs text-gray-500 mt-1">
-                    The systemuserid (GUID) from Dynamics 365 CRM. Leads will be assigned to this
-                    user.
+                    Select the Dynamics 365 CRM user. Leads captured by this rep will be automatically
+                    assigned to this user.
                   </p>
                 </div>
 
