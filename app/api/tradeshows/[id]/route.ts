@@ -80,7 +80,7 @@ export async function PATCH(request: NextRequest, { params }: { params: { id: st
     const tradeshowId = parseInt(params.id)
     const body = await request.json()
 
-    const { name, description, location, startDate, endDate, isActive, activeCampaignTagId } = body
+    const { name, description, location, startDate, endDate, isActive, activeCampaignTagName } = body
 
     // Update tradeshow
     await sql`
@@ -96,18 +96,52 @@ export async function PATCH(request: NextRequest, { params }: { params: { id: st
       WHERE id = ${tradeshowId}
     `
 
-    // Update ActiveCampaign tag if provided
-    if (activeCampaignTagId) {
-      // Delete existing tag
-      await sql`
-        DELETE FROM tradeshow_tags
-        WHERE tradeshow_id = ${tradeshowId} AND tag_name = 'activecampaign_tag_id'
-      `
-      // Insert new tag
-      await sql`
-        INSERT INTO tradeshow_tags (tradeshow_id, tag_name, tag_value)
-        VALUES (${tradeshowId}, 'activecampaign_tag_id', ${activeCampaignTagId})
-      `
+    // Create new ActiveCampaign tag if tag name provided
+    if (activeCampaignTagName) {
+      const AC_API_URL = process.env.ACTIVECAMPAIGN_API_URL
+      const AC_API_KEY = process.env.ACTIVECAMPAIGN_API_KEY
+
+      if (AC_API_URL && AC_API_KEY) {
+        try {
+          // Create tag in ActiveCampaign
+          const tagResponse = await fetch(`${AC_API_URL}/api/3/tags`, {
+            method: "POST",
+            headers: {
+              "Api-Token": AC_API_KEY,
+              "Content-Type": "application/json",
+            },
+            body: JSON.stringify({
+              tag: {
+                tag: activeCampaignTagName,
+                tagType: "contact",
+                description: `Lead capture tag for ${name} tradeshow${location ? ` in ${location}` : ""}`,
+              },
+            }),
+          })
+
+          if (tagResponse.ok) {
+            const tagData = await tagResponse.json()
+            const tagId = tagData.tag.id
+
+            // Delete existing tag and insert new one
+            await sql`
+              DELETE FROM tradeshow_tags
+              WHERE tradeshow_id = ${tradeshowId} AND tag_name = 'activecampaign_tag_id'
+            `
+            await sql`
+              INSERT INTO tradeshow_tags (tradeshow_id, tag_name, tag_value)
+              VALUES (${tradeshowId}, 'activecampaign_tag_id', ${tagId})
+            `
+
+            console.log(`Created ActiveCampaign tag "${activeCampaignTagName}" with ID ${tagId} for tradeshow ${tradeshowId}`)
+          } else {
+            console.error("Failed to create ActiveCampaign tag:", await tagResponse.text())
+          }
+        } catch (acError) {
+          console.error("Error creating ActiveCampaign tag:", acError)
+          // Continue even if AC tag creation fails
+        }
+      }
     }
 
     return NextResponse.json({ success: true, message: "Tradeshow updated successfully" })

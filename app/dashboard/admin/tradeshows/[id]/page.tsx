@@ -57,9 +57,10 @@ export default function TradeshowDetailPage() {
     startDate: "",
     endDate: "",
     isActive: true,
-    activeCampaignTagId: "",
+    activeCampaignTagName: "",
   })
   const [isSubmitting, setIsSubmitting] = useState(false)
+  const [loadingTagName, setLoadingTagName] = useState(false)
 
   useEffect(() => {
     if (status === "loading") return
@@ -101,6 +102,10 @@ export default function TradeshowDetailPage() {
   const openEditModal = () => {
     if (!tradeshow) return
 
+    // Auto-generate tag name from tradeshow details
+    const year = tradeshow.start_date ? new Date(tradeshow.start_date).getFullYear() : new Date().getFullYear()
+    const defaultTagName = `Tradeshow: ${tradeshow.name} - ${year}`
+
     setEditFormData({
       name: tradeshow.name,
       description: tradeshow.description || "",
@@ -108,7 +113,7 @@ export default function TradeshowDetailPage() {
       startDate: tradeshow.start_date ? tradeshow.start_date.split("T")[0] : "",
       endDate: tradeshow.end_date ? tradeshow.end_date.split("T")[0] : "",
       isActive: tradeshow.is_active,
-      activeCampaignTagId: tradeshow.tags.find(t => t.tag_name === "activecampaign_tag_id")?.tag_value || "",
+      activeCampaignTagName: defaultTagName,
     })
     setShowEditModal(true)
   }
@@ -128,7 +133,7 @@ export default function TradeshowDetailPage() {
           startDate: editFormData.startDate || null,
           endDate: editFormData.endDate || null,
           isActive: editFormData.isActive,
-          activeCampaignTagId: editFormData.activeCampaignTagId || null,
+          activeCampaignTagName: editFormData.activeCampaignTagName || null,
         }),
       })
 
@@ -455,23 +460,23 @@ export default function TradeshowDetailPage() {
 
                 <div>
                   <label className="block text-sm font-semibold text-gray-900 mb-2">
-                    ActiveCampaign Tag ID
+                    ActiveCampaign Tag Name
                   </label>
                   <input
                     type="text"
-                    value={editFormData.activeCampaignTagId}
-                    onChange={(e) => setEditFormData({ ...editFormData, activeCampaignTagId: e.target.value })}
+                    value={editFormData.activeCampaignTagName}
+                    onChange={(e) => setEditFormData({ ...editFormData, activeCampaignTagName: e.target.value })}
                     className="w-full px-4 py-2 border-2 border-gray-300 rounded-lg focus:ring-2 focus:ring-[rgb(27,208,118)] focus:border-[rgb(27,208,118)] outline-none text-gray-900"
-                    placeholder="e.g., 7"
+                    placeholder="e.g., Tradeshow: Safety Expo - 2025"
                   />
                   <p className="text-xs text-gray-500 mt-1">
-                    Optional: Update the ActiveCampaign tag ID for this tradeshow
+                    Editing this will create a new tag in ActiveCampaign and apply it to future submissions
                   </p>
                 </div>
 
                 <div className="bg-amber-50 border border-amber-200 rounded-lg p-4">
                   <p className="text-sm text-amber-900">
-                    <strong>Note:</strong> Changing the name will not update the slug or URL. The form URL will remain the same.
+                    <strong>Note:</strong> Changing the name or dates will not update the slug/URL. The form URL will remain the same.
                   </p>
                 </div>
 
