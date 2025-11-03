@@ -94,7 +94,7 @@ export async function POST(request: NextRequest) {
     }
 
     const body = await request.json()
-    const { name, slug, description, location, startDate, endDate, tags } = body
+    const { name, slug, description, location, startDate, endDate } = body
 
     if (!name || !slug) {
       return NextResponse.json({ error: "Name and slug are required" }, { status: 400 })
@@ -129,13 +129,49 @@ export async function POST(request: NextRequest) {
 
     const tradeshowId = result[0].id
 
-    // Add tags if provided
-    if (tags && Array.isArray(tags) && tags.length > 0) {
-      for (const tag of tags) {
-        await sql`
-          INSERT INTO tradeshow_tags (tradeshow_id, tag_name, tag_value)
-          VALUES (${tradeshowId}, ${tag.name}, ${tag.value})
-        `
+    // Automatically create ActiveCampaign tag
+    const AC_API_URL = process.env.ACTIVECAMPAIGN_API_URL
+    const AC_API_KEY = process.env.ACTIVECAMPAIGN_API_KEY
+
+    if (AC_API_URL && AC_API_KEY) {
+      try {
+        // Generate tag name: "Tradeshow: {name} - {year}"
+        const year = startDate ? new Date(startDate).getFullYear() : new Date().getFullYear()
+        const tagName = `Tradeshow: ${name} - ${year}`
+
+        // Create tag in ActiveCampaign
+        const tagResponse = await fetch(`${AC_API_URL}/api/3/tags`, {
+          method: "POST",
+          headers: {
+            "Api-Token": AC_API_KEY,
+            "Content-Type": "application/json",
+          },
+          body: JSON.stringify({
+            tag: {
+              tag: tagName,
+              tagType: "contact",
+              description: `Lead capture tag for ${name} tradeshow${location ? ` in ${location}` : ""}`,
+            },
+          }),
+        })
+
+        if (tagResponse.ok) {
+          const tagData = await tagResponse.json()
+          const tagId = tagData.tag.id
+
+          // Store tag ID in database
+          await sql`
+            INSERT INTO tradeshow_tags (tradeshow_id, tag_name, tag_value)
+            VALUES (${tradeshowId}, 'activecampaign_tag_id', ${tagId})
+          `
+
+          console.log(`Created ActiveCampaign tag "${tagName}" with ID ${tagId} for tradeshow ${tradeshowId}`)
+        } else {
+          console.error("Failed to create ActiveCampaign tag:", await tagResponse.text())
+        }
+      } catch (acError) {
+        console.error("Error creating ActiveCampaign tag:", acError)
+        // Continue even if AC tag creation fails - tradeshow is still created
       }
     }
 

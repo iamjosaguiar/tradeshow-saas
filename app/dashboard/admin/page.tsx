@@ -51,7 +51,6 @@ export default function AdminDashboard() {
     location: "",
     startDate: "",
     endDate: "",
-    activeCampaignTagId: "",
   })
 
   useEffect(() => {
@@ -89,10 +88,6 @@ export default function AdminDashboard() {
     setCreating(true)
 
     try {
-      const tags = formData.activeCampaignTagId
-        ? [{ name: "activecampaign_tag_id", value: formData.activeCampaignTagId }]
-        : []
-
       const response = await fetch("/api/tradeshows", {
         method: "POST",
         headers: { "Content-Type": "application/json" },
@@ -103,7 +98,6 @@ export default function AdminDashboard() {
           location: formData.location,
           startDate: formData.startDate || null,
           endDate: formData.endDate || null,
-          tags,
         }),
       })
 
@@ -116,7 +110,6 @@ export default function AdminDashboard() {
           location: "",
           startDate: "",
           endDate: "",
-          activeCampaignTagId: "",
         })
         fetchTradeshows()
       } else {
@@ -477,21 +470,9 @@ export default function AdminDashboard() {
                   </div>
                 </div>
 
-                <div>
-                  <label className="block text-sm font-semibold text-gray-900 mb-2">
-                    ActiveCampaign Tag ID
-                  </label>
-                  <input
-                    type="text"
-                    value={formData.activeCampaignTagId}
-                    onChange={(e) =>
-                      setFormData({ ...formData, activeCampaignTagId: e.target.value })
-                    }
-                    className="w-full px-4 py-2 border-2 border-gray-300 rounded-lg focus:ring-2 focus:ring-[rgb(27,208,118)] focus:border-[rgb(27,208,118)] outline-none text-gray-900"
-                    placeholder="e.g., 7"
-                  />
-                  <p className="text-xs text-gray-500 mt-1">
-                    Tag ID from ActiveCampaign to associate with this tradeshow
+                <div className="bg-blue-50 border border-blue-200 rounded-lg p-4">
+                  <p className="text-sm text-blue-900">
+                    <strong>Note:</strong> An ActiveCampaign tag will be automatically created based on the tradeshow name and year (e.g., "Tradeshow: {formData.name || 'Name'} - {formData.startDate ? new Date(formData.startDate).getFullYear() : 'Year'}").
                   </p>
                 </div>
 
