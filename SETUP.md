@@ -27,9 +27,9 @@ This will create:
 
 The schema creates default users:
 
-**Admin Account:**
-- Email: `admin@cleanspacetechnology.com`
-- Password: `admin123`
+**Admin Accounts:**
+- Email: `admin@cleanspacetechnology.com` / Password: `admin123` (Default Admin)
+- Email: `cleanspace@ambrit.com.au` / Password: `BecRules123!` (Bec - CleanSpace)
 - Role: Admin (can create tradeshows, view all analytics)
 
 **Sample Rep Accounts:**
