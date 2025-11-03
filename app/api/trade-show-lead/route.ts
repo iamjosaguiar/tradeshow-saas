@@ -201,6 +201,79 @@ export async function POST(request: NextRequest) {
       })
     }
 
+    // Create Lead in Dynamics 365
+    const D365_TENANT_ID = process.env.DYNAMICS_TENANT_ID
+    const D365_CLIENT_ID = process.env.DYNAMICS_CLIENT_ID
+    const D365_CLIENT_SECRET = process.env.DYNAMICS_CLIENT_SECRET
+    const D365_INSTANCE_URL = process.env.DYNAMICS_INSTANCE_URL
+
+    if (D365_TENANT_ID && D365_CLIENT_ID && D365_CLIENT_SECRET && D365_INSTANCE_URL) {
+      try {
+        // Get OAuth token from Azure AD
+        const tokenResponse = await fetch(
+          `https://login.microsoftonline.com/${D365_TENANT_ID}/oauth2/v2.0/token`,
+          {
+            method: "POST",
+            headers: {
+              "Content-Type": "application/x-www-form-urlencoded",
+            },
+            body: new URLSearchParams({
+              client_id: D365_CLIENT_ID,
+              client_secret: D365_CLIENT_SECRET,
+              scope: `${D365_INSTANCE_URL}/.default`,
+              grant_type: "client_credentials",
+            }),
+          }
+        )
+
+        if (!tokenResponse.ok) {
+          console.error("Failed to get D365 token:", await tokenResponse.text())
+        } else {
+          const tokenData = await tokenResponse.json()
+          const accessToken = tokenData.access_token
+
+          // Prepare lead data for Dynamics 365
+          const tradeshowInfo = tradeshowSlug ? ` - ${tradeshowSlug}` : ""
+          const repInfo = repName ? ` (Rep: ${repName})` : ""
+
+          const leadData = {
+            subject: `Tradeshow Lead: ${name}${tradeshowInfo}`,
+            firstname: name.split(" ")[0] || name,
+            lastname: name.split(" ").slice(1).join(" ") || name,
+            emailaddress1: email,
+            companyname: company || "",
+            jobtitle: role || "",
+            description: `Badge Photo: ${photoUrl}\n\nRegion: ${region}\nRole: ${role}\nCompany: ${company}\nCurrent Respirator: ${currentRespirator}\nWork Environment: ${workEnvironment}\nNumber of Staff: ${numberOfStaff}\nComments: ${comments}${tradeshowInfo}${repInfo}`,
+            mobilephone: "",
+            address1_country: region || "",
+          }
+
+          // Create lead in Dynamics 365
+          const leadResponse = await fetch(`${D365_INSTANCE_URL}/api/data/v9.2/leads`, {
+            method: "POST",
+            headers: {
+              Authorization: `Bearer ${accessToken}`,
+              "Content-Type": "application/json",
+              Accept: "application/json",
+              "OData-MaxVersion": "4.0",
+              "OData-Version": "4.0",
+            },
+            body: JSON.stringify(leadData),
+          })
+
+          if (leadResponse.ok) {
+            const leadId = leadResponse.headers.get("OData-EntityId")
+            console.log(`Created Dynamics 365 lead: ${leadId}`)
+          } else {
+            console.error("Failed to create D365 lead:", await leadResponse.text())
+          }
+        }
+      } catch (d365Error) {
+        console.error("Error creating Dynamics 365 lead:", d365Error)
+        // Continue even if D365 fails - form submission still succeeds
+      }
+    }
+
     return NextResponse.json({
       success: true,
       message: "Form submitted successfully",
