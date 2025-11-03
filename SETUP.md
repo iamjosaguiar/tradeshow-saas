@@ -28,13 +28,13 @@ This will create:
 The schema creates default users:
 
 **Admin Account:**
-- Email: `admin@cleanspace.com`
+- Email: `admin@cleanspacetechnology.com`
 - Password: `admin123`
 - Role: Admin (can create tradeshows, view all analytics)
 
 **Sample Rep Accounts:**
-- Email: `john.smith@cleanspace.com` / Password: `admin123` / Rep Code: `john-smith`
-- Email: `jane.doe@cleanspace.com` / Password: `admin123` / Rep Code: `jane-doe`
+- Email: `john.smith@cleanspacetechnology.com` / Password: `admin123` / Rep Code: `john-smith`
+- Email: `jane.doe@cleanspacetechnology.com` / Password: `admin123` / Rep Code: `jane-doe`
 
 **⚠️ IMPORTANT:** Change the admin password immediately after first login!
 

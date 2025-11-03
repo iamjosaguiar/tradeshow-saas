@@ -81,7 +81,7 @@ CREATE INDEX IF NOT EXISTS idx_page_views_tradeshow ON page_views(tradeshow_id);
 -- IMPORTANT: Change this password after first login!
 INSERT INTO users (email, name, password_hash, role, rep_code)
 VALUES (
-  'admin@cleanspace.com',
+  'admin@cleanspacetechnology.com',
   'Admin User',
   '$2a$10$rK3VNnEKPgXLJLGqJWqBHO0tGLuCLPvLRvFqLvXqZKVnGQ8YZJzPq',
   'admin',
@@ -92,8 +92,8 @@ ON CONFLICT (email) DO NOTHING;
 -- Seed data: Create sample rep users
 INSERT INTO users (email, name, password_hash, role, rep_code)
 VALUES
-  ('john.smith@cleanspace.com', 'John Smith', '$2a$10$rK3VNnEKPgXLJLGqJWqBHO0tGLuCLPvLRvFqLvXqZKVnGQ8YZJzPq', 'rep', 'john-smith'),
-  ('jane.doe@cleanspace.com', 'Jane Doe', '$2a$10$rK3VNnEKPgXLJLGqJWqBHO0tGLuCLPvLRvFqLvXqZKVnGQ8YZJzPq', 'rep', 'jane-doe')
+  ('john.smith@cleanspacetechnology.com', 'John Smith', '$2a$10$rK3VNnEKPgXLJLGqJWqBHO0tGLuCLPvLRvFqLvXqZKVnGQ8YZJzPq', 'rep', 'john-smith'),
+  ('jane.doe@cleanspacetechnology.com', 'Jane Doe', '$2a$10$rK3VNnEKPgXLJLGqJWqBHO0tGLuCLPvLRvFqLvXqZKVnGQ8YZJzPq', 'rep', 'jane-doe')
 ON CONFLICT (email) DO NOTHING;
 
 -- Seed data: Create sample tradeshows

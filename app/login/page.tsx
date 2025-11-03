@@ -97,7 +97,7 @@ export default function LoginPage() {
                     value={email}
                     onChange={(e) => setEmail(e.target.value)}
                     className="w-full px-4 py-3 rounded-lg border-2 border-gray-300 focus:border-[rgb(27,208,118)] focus:ring-2 focus:ring-[rgb(27,208,118)]/20 outline-none transition-all text-base"
-                    placeholder="your.email@cleanspace.com"
+                    placeholder="your.email@cleanspacetechnology.com"
                     disabled={isLoading}
                     required
                   />
@@ -145,7 +145,7 @@ export default function LoginPage() {
               {/* Help Text */}
               <div className="mt-6 pt-6 border-t border-gray-200">
                 <p className="text-sm text-center text-muted-foreground">
-                  Default login: admin@cleanspace.com / admin123
+                  Default login: admin@cleanspacetechnology.com / admin123
                 </p>
                 <p className="text-xs text-center text-muted-foreground mt-2">
                   Contact your administrator if you need assistance
