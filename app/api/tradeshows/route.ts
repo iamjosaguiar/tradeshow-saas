@@ -16,27 +16,54 @@ export async function GET(request: NextRequest) {
 
     const sql = neon(process.env.DATABASE_URL!)
 
-    // Get all tradeshows with entry counts
-    const tradeshows = await sql`
-      SELECT
-        t.id,
-        t.name,
-        t.slug,
-        t.description,
-        t.location,
-        t.start_date,
-        t.end_date,
-        t.is_active,
-        t.created_at,
-        t.updated_at,
-        u.name as created_by_name,
-        COUNT(bp.id) as submission_count
-      FROM tradeshows t
-      LEFT JOIN users u ON t.created_by = u.id
-      LEFT JOIN badge_photos bp ON t.id = bp.tradeshow_id
-      GROUP BY t.id, u.name
-      ORDER BY t.created_at DESC
-    `
+    // For reps, only show their own submission counts
+    // For admins, show total submission counts
+    let tradeshows
+    if (session.user.role === "rep") {
+      // Get tradeshows with rep's own submission count
+      tradeshows = await sql`
+        SELECT
+          t.id,
+          t.name,
+          t.slug,
+          t.description,
+          t.location,
+          t.start_date,
+          t.end_date,
+          t.is_active,
+          t.created_at,
+          t.updated_at,
+          u.name as created_by_name,
+          COUNT(bp.id) FILTER (WHERE bp.submitted_by_rep = ${session.user.id}) as submission_count
+        FROM tradeshows t
+        LEFT JOIN users u ON t.created_by = u.id
+        LEFT JOIN badge_photos bp ON t.id = bp.tradeshow_id
+        GROUP BY t.id, u.name
+        ORDER BY t.created_at DESC
+      `
+    } else {
+      // Get all tradeshows with total entry counts (admin view)
+      tradeshows = await sql`
+        SELECT
+          t.id,
+          t.name,
+          t.slug,
+          t.description,
+          t.location,
+          t.start_date,
+          t.end_date,
+          t.is_active,
+          t.created_at,
+          t.updated_at,
+          u.name as created_by_name,
+          COUNT(bp.id) as submission_count
+        FROM tradeshows t
+        LEFT JOIN users u ON t.created_by = u.id
+        LEFT JOIN badge_photos bp ON t.id = bp.tradeshow_id
+        GROUP BY t.id, u.name
+        ORDER BY t.created_at DESC
+      `
+    }
 
     // Get tags for each tradeshow
     const tags = await sql`

@@ -165,7 +165,9 @@ export default function RepDashboard() {
                     )}
                     <div className="flex items-center gap-2 text-gray-600">
                       <Users className="h-4 w-4 flex-shrink-0" />
-                      <span>{tradeshow.submission_count} total submissions</span>
+                      <span className="font-semibold text-[rgb(27,208,118)]">
+                        {tradeshow.submission_count} {tradeshow.submission_count === "1" ? "lead" : "leads"} captured by you
+                      </span>
                     </div>
                   </div>
 
