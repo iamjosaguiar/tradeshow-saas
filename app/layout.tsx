@@ -8,10 +8,10 @@ import { Suspense } from "react"
 import "./globals.css"
 
 export const metadata: Metadata = {
-  title: "CleanSpace Halo WORK - Lightest PAPR with 99.97% Filtration Efficiency",
+  title: "CleanSpace Tradeshow Lead Capture",
   description:
-    "The new CleanSpace Halo WORK PAPR provides superior respiratory protection with TM3 P3 filtration, AirSensit™ technology, and up to 8 hours battery life. Lightweight at just 340g.",
-  generator: "v0.app",
+    "CleanSpace Technology tradeshow lead capture and management system. Streamlined lead collection, rep tracking, and CRM integration for tradeshows and events.",
+  keywords: "CleanSpace, tradeshow, lead capture, respiratory protection, sales management",
 }
 
 export default function RootLayout({
