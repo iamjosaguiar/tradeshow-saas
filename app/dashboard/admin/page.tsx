@@ -390,39 +390,44 @@ export default function AdminDashboard() {
 
       {/* Create Modal */}
       {showCreateModal && (
-        <div className="fixed inset-0 bg-black/50 flex items-center justify-center z-50 p-4">
-          <Card className="w-full max-w-2xl max-h-[90vh] overflow-y-auto">
-            <CardHeader>
+        <div className="fixed inset-0 bg-black/70 backdrop-blur-sm flex items-center justify-center z-50 p-4">
+          <Card className="w-full max-w-2xl max-h-[90vh] overflow-y-auto bg-white shadow-2xl border-0">
+            <CardHeader className="bg-white border-b pb-4">
               <div className="flex items-center justify-between">
-                <CardTitle className="text-2xl">Create New Tradeshow</CardTitle>
-                <Button variant="ghost" size="sm" onClick={() => setShowCreateModal(false)}>
-                  <X className="h-4 w-4" />
+                <CardTitle className="text-2xl font-bold text-gray-900">Create New Tradeshow</CardTitle>
+                <Button
+                  variant="ghost"
+                  size="sm"
+                  onClick={() => setShowCreateModal(false)}
+                  className="hover:bg-gray-100"
+                >
+                  <X className="h-5 w-5" />
                 </Button>
               </div>
-              <CardDescription>
+              <CardDescription className="text-gray-600 text-base mt-2">
                 Fill in the details to create a new tradeshow event
               </CardDescription>
             </CardHeader>
-            <CardContent>
-              <form onSubmit={handleCreateTradeshow} className="space-y-4">
+            <CardContent className="pt-6">
+              <form onSubmit={handleCreateTradeshow} className="space-y-5">
                 <div>
-                  <label className="block text-sm font-medium mb-2">Name *</label>
+                  <label className="block text-sm font-semibold text-gray-900 mb-2">Name *</label>
                   <input
                     type="text"
                     value={formData.name}
                     onChange={(e) => handleSlugGeneration(e.target.value)}
-                    className="w-full px-4 py-2 border rounded-lg focus:ring-2 focus:ring-[rgb(27,208,118)] outline-none"
+                    className="w-full px-4 py-2 border-2 border-gray-300 rounded-lg focus:ring-2 focus:ring-[rgb(27,208,118)] focus:border-[rgb(27,208,118)] outline-none text-gray-900"
                     required
                   />
                 </div>
 
                 <div>
-                  <label className="block text-sm font-medium mb-2">Slug *</label>
+                  <label className="block text-sm font-semibold text-gray-900 mb-2">Slug *</label>
                   <input
                     type="text"
                     value={formData.slug}
                     onChange={(e) => setFormData({ ...formData, slug: e.target.value })}
-                    className="w-full px-4 py-2 border rounded-lg focus:ring-2 focus:ring-[rgb(27,208,118)] outline-none"
+                    className="w-full px-4 py-2 border-2 border-gray-300 rounded-lg focus:ring-2 focus:ring-[rgb(27,208,118)] focus:border-[rgb(27,208,118)] outline-none text-gray-900"
                     required
                     placeholder="auto-generated-from-name"
                   />
@@ -432,48 +437,48 @@ export default function AdminDashboard() {
                 </div>
 
                 <div>
-                  <label className="block text-sm font-medium mb-2">Description</label>
+                  <label className="block text-sm font-semibold text-gray-900 mb-2">Description</label>
                   <textarea
                     value={formData.description}
                     onChange={(e) => setFormData({ ...formData, description: e.target.value })}
-                    className="w-full px-4 py-2 border rounded-lg focus:ring-2 focus:ring-[rgb(27,208,118)] outline-none"
+                    className="w-full px-4 py-2 border-2 border-gray-300 rounded-lg focus:ring-2 focus:ring-[rgb(27,208,118)] focus:border-[rgb(27,208,118)] outline-none text-gray-900"
                     rows={3}
                   />
                 </div>
 
                 <div>
-                  <label className="block text-sm font-medium mb-2">Location</label>
+                  <label className="block text-sm font-semibold text-gray-900 mb-2">Location</label>
                   <input
                     type="text"
                     value={formData.location}
                     onChange={(e) => setFormData({ ...formData, location: e.target.value })}
-                    className="w-full px-4 py-2 border rounded-lg focus:ring-2 focus:ring-[rgb(27,208,118)] outline-none"
+                    className="w-full px-4 py-2 border-2 border-gray-300 rounded-lg focus:ring-2 focus:ring-[rgb(27,208,118)] focus:border-[rgb(27,208,118)] outline-none text-gray-900"
                   />
                 </div>
 
                 <div className="grid grid-cols-2 gap-4">
                   <div>
-                    <label className="block text-sm font-medium mb-2">Start Date</label>
+                    <label className="block text-sm font-semibold text-gray-900 mb-2">Start Date</label>
                     <input
                       type="date"
                       value={formData.startDate}
                       onChange={(e) => setFormData({ ...formData, startDate: e.target.value })}
-                      className="w-full px-4 py-2 border rounded-lg focus:ring-2 focus:ring-[rgb(27,208,118)] outline-none"
+                      className="w-full px-4 py-2 border-2 border-gray-300 rounded-lg focus:ring-2 focus:ring-[rgb(27,208,118)] focus:border-[rgb(27,208,118)] outline-none text-gray-900"
                     />
                   </div>
                   <div>
-                    <label className="block text-sm font-medium mb-2">End Date</label>
+                    <label className="block text-sm font-semibold text-gray-900 mb-2">End Date</label>
                     <input
                       type="date"
                       value={formData.endDate}
                       onChange={(e) => setFormData({ ...formData, endDate: e.target.value })}
-                      className="w-full px-4 py-2 border rounded-lg focus:ring-2 focus:ring-[rgb(27,208,118)] outline-none"
+                      className="w-full px-4 py-2 border-2 border-gray-300 rounded-lg focus:ring-2 focus:ring-[rgb(27,208,118)] focus:border-[rgb(27,208,118)] outline-none text-gray-900"
                     />
                   </div>
                 </div>
 
                 <div>
-                  <label className="block text-sm font-medium mb-2">
+                  <label className="block text-sm font-semibold text-gray-900 mb-2">
                     ActiveCampaign Tag ID
                   </label>
                   <input
@@ -482,7 +487,7 @@ export default function AdminDashboard() {
                     onChange={(e) =>
                       setFormData({ ...formData, activeCampaignTagId: e.target.value })
                     }
-                    className="w-full px-4 py-2 border rounded-lg focus:ring-2 focus:ring-[rgb(27,208,118)] outline-none"
+                    className="w-full px-4 py-2 border-2 border-gray-300 rounded-lg focus:ring-2 focus:ring-[rgb(27,208,118)] focus:border-[rgb(27,208,118)] outline-none text-gray-900"
                     placeholder="e.g., 7"
                   />
                   <p className="text-xs text-gray-500 mt-1">
@@ -490,12 +495,12 @@ export default function AdminDashboard() {
                   </p>
                 </div>
 
-                <div className="flex gap-4 pt-4">
+                <div className="flex gap-4 pt-6 border-t">
                   <Button
                     type="button"
                     variant="outline"
                     onClick={() => setShowCreateModal(false)}
-                    className="flex-1"
+                    className="flex-1 border-2 hover:bg-gray-50"
                   >
                     Cancel
                   </Button>
