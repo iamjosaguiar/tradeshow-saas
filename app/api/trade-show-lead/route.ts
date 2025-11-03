@@ -45,13 +45,14 @@ export async function POST(request: NextRequest) {
       }
     }
 
-    // Look up rep user ID and name from rep code
+    // Look up rep user ID, name, and Dynamics user ID from rep code
     let repUserId: number | null = null
     let repName: string | null = null
+    let dynamicsUserId: string | null = null
 
     if (repCode) {
       const reps = await sql`
-        SELECT id, name
+        SELECT id, name, dynamics_user_id
         FROM users
         WHERE rep_code = ${repCode} AND role = 'rep'
         LIMIT 1
@@ -60,6 +61,7 @@ export async function POST(request: NextRequest) {
       if (reps.length > 0) {
         repUserId = reps[0].id
         repName = reps[0].name
+        dynamicsUserId = reps[0].dynamics_user_id
       }
     }
 
@@ -245,7 +247,7 @@ export async function POST(request: NextRequest) {
             }
           }
 
-          const leadData = {
+          const leadData: any = {
             subject: `Tradeshow Lead: ${name}${tradeshowInfo}`,
             firstname: name.split(" ")[0] || name,
             lastname: name.split(" ").slice(1).join(" ") || name,
@@ -256,6 +258,11 @@ export async function POST(request: NextRequest) {
             mobilephone: "",
             address1_country: region || "",
             numberofemployees: employeeCount,
+          }
+
+          // Assign lead to Dynamics user if configured for this rep
+          if (dynamicsUserId) {
+            leadData["ownerid@odata.bind"] = `/systemusers(${dynamicsUserId})`
           }
 
           // Create lead in Dynamics 365

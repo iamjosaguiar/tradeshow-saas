@@ -9,6 +9,7 @@ CREATE TABLE IF NOT EXISTS users (
   password_hash TEXT NOT NULL,
   role VARCHAR(20) NOT NULL CHECK (role IN ('admin', 'rep')),
   rep_code VARCHAR(100) UNIQUE,
+  dynamics_user_id VARCHAR(255),
   created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
   updated_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
   last_login TIMESTAMP
@@ -42,6 +43,9 @@ CREATE TABLE IF NOT EXISTS tradeshow_tags (
 -- If badge_photos already exists, add the new column
 ALTER TABLE badge_photos ADD COLUMN IF NOT EXISTS tradeshow_id INTEGER REFERENCES tradeshows(id) ON DELETE SET NULL;
 ALTER TABLE badge_photos ADD COLUMN IF NOT EXISTS submitted_by_rep INTEGER REFERENCES users(id) ON DELETE SET NULL;
+
+-- Add dynamics_user_id to users table if it doesn't exist
+ALTER TABLE users ADD COLUMN IF NOT EXISTS dynamics_user_id VARCHAR(255);
 
 -- Create index for faster queries
 CREATE INDEX IF NOT EXISTS idx_badge_photos_tradeshow ON badge_photos(tradeshow_id);

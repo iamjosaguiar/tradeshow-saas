@@ -245,13 +245,23 @@ export default function AdminDashboard() {
         {/* Actions */}
         <div className="flex justify-between items-center mb-6">
           <h2 className="text-2xl font-bold text-gray-900">Tradeshow Management</h2>
-          <Button
-            onClick={() => setShowCreateModal(true)}
-            className="bg-[rgb(27,208,118)] hover:bg-[rgb(27,208,118)]/90 text-white"
-          >
-            <Plus className="h-4 w-4 mr-2" />
-            Create New Tradeshow
-          </Button>
+          <div className="flex gap-3">
+            <Button
+              onClick={() => router.push("/dashboard/admin/reps")}
+              variant="outline"
+              className="border-2"
+            >
+              <Users className="h-4 w-4 mr-2" />
+              Manage Sales Reps
+            </Button>
+            <Button
+              onClick={() => setShowCreateModal(true)}
+              className="bg-[rgb(27,208,118)] hover:bg-[rgb(27,208,118)]/90 text-white"
+            >
+              <Plus className="h-4 w-4 mr-2" />
+              Create New Tradeshow
+            </Button>
+          </div>
         </div>
 
         {/* Sort and Filter Controls */}
