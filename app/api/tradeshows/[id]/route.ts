@@ -66,3 +66,53 @@ export async function GET(request: NextRequest, { params }: { params: { id: stri
     return NextResponse.json({ error: "Internal server error" }, { status: 500 })
   }
 }
+
+// PATCH - Update tradeshow
+export async function PATCH(request: NextRequest, { params }: { params: { id: string } }) {
+  try {
+    const session = await getServerSession(authOptions)
+
+    if (!session || session.user.role !== "admin") {
+      return NextResponse.json({ error: "Unauthorized" }, { status: 401 })
+    }
+
+    const sql = neon(process.env.DATABASE_URL!)
+    const tradeshowId = parseInt(params.id)
+    const body = await request.json()
+
+    const { name, description, location, startDate, endDate, isActive, activeCampaignTagId } = body
+
+    // Update tradeshow
+    await sql`
+      UPDATE tradeshows
+      SET
+        name = ${name},
+        description = ${description},
+        location = ${location},
+        start_date = ${startDate},
+        end_date = ${endDate},
+        is_active = ${isActive},
+        updated_at = NOW()
+      WHERE id = ${tradeshowId}
+    `
+
+    // Update ActiveCampaign tag if provided
+    if (activeCampaignTagId) {
+      // Delete existing tag
+      await sql`
+        DELETE FROM tradeshow_tags
+        WHERE tradeshow_id = ${tradeshowId} AND tag_name = 'activecampaign_tag_id'
+      `
+      // Insert new tag
+      await sql`
+        INSERT INTO tradeshow_tags (tradeshow_id, tag_name, tag_value)
+        VALUES (${tradeshowId}, 'activecampaign_tag_id', ${activeCampaignTagId})
+      `
+    }
+
+    return NextResponse.json({ success: true, message: "Tradeshow updated successfully" })
+  } catch (error) {
+    console.error("Error updating tradeshow:", error)
+    return NextResponse.json({ error: "Internal server error" }, { status: 500 })
+  }
+}

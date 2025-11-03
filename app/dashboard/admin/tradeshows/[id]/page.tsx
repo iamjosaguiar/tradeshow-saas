@@ -16,6 +16,8 @@ import {
   ExternalLink,
   Copy,
   CheckCircle,
+  Edit,
+  X,
 } from "lucide-react"
 
 interface Tradeshow {
@@ -47,6 +49,17 @@ export default function TradeshowDetailPage() {
   const [tradeshow, setTradeshow] = useState<Tradeshow | null>(null)
   const [loading, setLoading] = useState(true)
   const [copied, setCopied] = useState(false)
+  const [showEditModal, setShowEditModal] = useState(false)
+  const [editFormData, setEditFormData] = useState({
+    name: "",
+    description: "",
+    location: "",
+    startDate: "",
+    endDate: "",
+    isActive: true,
+    activeCampaignTagId: "",
+  })
+  const [isSubmitting, setIsSubmitting] = useState(false)
 
   useEffect(() => {
     if (status === "loading") return
