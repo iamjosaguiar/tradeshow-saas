@@ -16,6 +16,7 @@ import {
   TrendingUp,
   Eye,
   X,
+  Settings,
 } from "lucide-react"
 
 interface Tradeshow {
@@ -194,14 +195,24 @@ export default function AdminDashboard() {
               <p className="text-sm text-gray-500">Welcome, {session?.user?.name}</p>
             </div>
           </div>
-          <Button
-            variant="outline"
-            onClick={() => signOut({ callbackUrl: "/login" })}
-            className="flex items-center gap-2"
-          >
-            <LogOut className="h-4 w-4" />
-            Sign Out
-          </Button>
+          <div className="flex gap-3">
+            <Button
+              variant="outline"
+              onClick={() => router.push("/dashboard/settings")}
+              className="flex items-center gap-2"
+            >
+              <Settings className="h-4 w-4" />
+              Settings
+            </Button>
+            <Button
+              variant="outline"
+              onClick={() => signOut({ callbackUrl: "/login" })}
+              className="flex items-center gap-2"
+            >
+              <LogOut className="h-4 w-4" />
+              Sign Out
+            </Button>
+          </div>
         </div>
       </header>
 

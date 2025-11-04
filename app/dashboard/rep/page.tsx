@@ -15,6 +15,7 @@ import {
   CheckCircle,
   ExternalLink,
   Users,
+  Settings,
 } from "lucide-react"
 
 interface Tradeshow {
@@ -129,14 +130,24 @@ export default function RepDashboard() {
             <h1 className="text-xl font-bold text-gray-900">Rep Dashboard</h1>
             <p className="text-sm text-gray-500">Welcome back, {session?.user.name}</p>
           </div>
-          <Button
-            variant="outline"
-            onClick={() => signOut({ callbackUrl: "/login" })}
-            className="flex items-center gap-2"
-          >
-            <LogOut className="h-4 w-4" />
-            Sign Out
-          </Button>
+          <div className="flex gap-3">
+            <Button
+              variant="outline"
+              onClick={() => router.push("/dashboard/settings")}
+              className="flex items-center gap-2"
+            >
+              <Settings className="h-4 w-4" />
+              Settings
+            </Button>
+            <Button
+              variant="outline"
+              onClick={() => signOut({ callbackUrl: "/login" })}
+              className="flex items-center gap-2"
+            >
+              <LogOut className="h-4 w-4" />
+              Sign Out
+            </Button>
+          </div>
         </div>
       </header>
 
