@@ -7,6 +7,8 @@ import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/com
 import { Badge } from "@/components/ui/badge"
 import { Upload, CheckCircle, Loader2, Calendar, MapPin } from "lucide-react"
 import { track } from "@vercel/analytics"
+import PhoneInput from "react-phone-number-input"
+import "react-phone-number-input/style.css"
 
 interface FormData {
   email: string
@@ -356,13 +358,12 @@ export default function TradeshowLeadForm() {
                   <label htmlFor="phone" className="block text-sm font-semibold text-foreground mb-2">
                     Phone Number
                   </label>
-                  <input
-                    type="tel"
-                    id="phone"
+                  <PhoneInput
+                    international
+                    defaultCountry="DE"
                     value={formData.phone}
-                    onChange={(e) => setFormData({ ...formData, phone: e.target.value })}
-                    className="w-full px-4 py-3 rounded-lg border-2 border-gray-300 focus:border-[rgb(27,208,118)] focus:ring-2 focus:ring-[rgb(27,208,118)]/20 outline-none transition-all text-base"
-                    placeholder="+1 234-567-8900"
+                    onChange={(value) => setFormData({ ...formData, phone: value || "" })}
+                    className="phone-input-custom"
                   />
                 </div>
 
