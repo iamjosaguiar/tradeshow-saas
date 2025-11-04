@@ -393,6 +393,7 @@ export default function TradeshowRepLeadForm() {
                   <PhoneInput
                     international
                     defaultCountry="DE"
+                    countryOptionsOrder={["DE", "FR", "GB", "AT", "CH", "US", "AU", "CA", "|", "..."]}
                     value={formData.phone}
                     onChange={(value) => setFormData({ ...formData, phone: value || "" })}
                     className="phone-input-custom"
