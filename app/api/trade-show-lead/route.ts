@@ -7,6 +7,7 @@ export async function POST(request: NextRequest) {
 
     const email = formData.get("email") as string
     const name = formData.get("name") as string
+    const phone = formData.get("phone") as string
     const region = formData.get("region") as string
     const comments = formData.get("comments") as string
     const company = formData.get("company") as string
@@ -98,7 +99,7 @@ export async function POST(request: NextRequest) {
         email: email,
         firstName: name.split(" ")[0] || name,
         lastName: name.split(" ").slice(1).join(" ") || "",
-        phone: "",
+        phone: phone || "",
         fieldValues: [
           {
             field: "1", // Country (using for Region)
@@ -255,7 +256,7 @@ export async function POST(request: NextRequest) {
             companyname: company || "",
             jobtitle: role || "",
             description: `Badge Photo: ${photoUrl}\n\nCurrent Respirator: ${currentRespirator || "Not specified"}\nWork Environment: ${workEnvironment || "Not specified"}\nRegion: ${region || "Not specified"}\nComments: ${comments || "None"}${tradeshowInfo}${repInfo}`,
-            mobilephone: "",
+            telephone1: phone || "",
             address1_country: region || "",
             numberofemployees: employeeCount,
           }

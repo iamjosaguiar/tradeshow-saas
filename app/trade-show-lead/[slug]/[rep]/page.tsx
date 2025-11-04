@@ -11,6 +11,7 @@ import { track } from "@vercel/analytics"
 interface FormData {
   email: string
   name: string
+  phone: string
   region: string
   otherRegion: string
   comments: string
@@ -59,6 +60,7 @@ export default function TradeshowRepLeadForm() {
   const [formData, setFormData] = useState<FormData>({
     email: "",
     name: "",
+    phone: "",
     region: "",
     otherRegion: "",
     comments: "",
@@ -186,6 +188,7 @@ export default function TradeshowRepLeadForm() {
       const formDataToSend = new FormData()
       formDataToSend.append("email", formData.email)
       formDataToSend.append("name", formData.name)
+      formDataToSend.append("phone", formData.phone)
       formDataToSend.append("region", formData.region === "Other" ? formData.otherRegion : formData.region)
       formDataToSend.append("comments", formData.comments)
       formDataToSend.append("company", formData.company)
@@ -214,6 +217,7 @@ export default function TradeshowRepLeadForm() {
         setFormData({
           email: "",
           name: "",
+          phone: "",
           region: "",
           otherRegion: "",
           comments: "",
@@ -377,6 +381,21 @@ export default function TradeshowRepLeadForm() {
                     placeholder="John Doe"
                   />
                   {errors.name && <p className="mt-1 text-sm text-red-500">{errors.name}</p>}
+                </div>
+
+                {/* Phone Number */}
+                <div>
+                  <label htmlFor="phone" className="block text-sm font-semibold text-foreground mb-2">
+                    Phone Number
+                  </label>
+                  <input
+                    type="tel"
+                    id="phone"
+                    value={formData.phone}
+                    onChange={(e) => setFormData({ ...formData, phone: e.target.value })}
+                    className="w-full px-4 py-3 rounded-lg border-2 border-gray-300 focus:border-[rgb(27,208,118)] focus:ring-2 focus:ring-[rgb(27,208,118)]/20 outline-none transition-all text-base"
+                    placeholder="+1 234-567-8900"
+                  />
                 </div>
 
                 {/* Region */}
