@@ -10,14 +10,14 @@ export async function GET(
     const code = params.code
 
     const users = await sql`
-      SELECT id, name, rep_code, email
+      SELECT id, name, rep_code, email, role
       FROM users
-      WHERE rep_code = ${code} AND role = 'rep'
+      WHERE rep_code = ${code} AND role IN ('rep', 'admin')
       LIMIT 1
     `
 
     if (users.length === 0) {
-      return NextResponse.json({ error: "Sales representative not found" }, { status: 404 })
+      return NextResponse.json({ error: "Representative not found" }, { status: 404 })
     }
 
     return NextResponse.json(users[0])

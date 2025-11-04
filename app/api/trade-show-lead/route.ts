@@ -45,16 +45,16 @@ export async function POST(request: NextRequest) {
       }
     }
 
-    // Look up rep user ID, name, and Dynamics user ID from rep code
+    // Look up rep user ID, name, and Dynamics user ID from rep code (both reps and admins)
     let repUserId: number | null = null
     let repName: string | null = null
     let dynamicsUserId: string | null = null
 
     if (repCode) {
       const reps = await sql`
-        SELECT id, name, dynamics_user_id
+        SELECT id, name, dynamics_user_id, role
         FROM users
-        WHERE rep_code = ${repCode} AND role = 'rep'
+        WHERE rep_code = ${repCode} AND role IN ('rep', 'admin')
         LIMIT 1
       `
 

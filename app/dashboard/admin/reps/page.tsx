@@ -25,6 +25,7 @@ interface Rep {
   name: string
   rep_code: string
   dynamics_user_id: string | null
+  role: string
   created_at: string
   last_login: string | null
 }
@@ -218,8 +219,8 @@ export default function RepsManagementPage() {
               className="h-10"
             />
             <div>
-              <h1 className="text-xl font-bold text-gray-900">Sales Rep Management</h1>
-              <p className="text-sm text-gray-500">Manage sales representatives and Dynamics 365 integration</p>
+              <h1 className="text-xl font-bold text-gray-900">Rep & Admin Management</h1>
+              <p className="text-sm text-gray-500">Manage personalized URLs and Dynamics 365 integration</p>
             </div>
           </div>
           <div className="flex items-center gap-2">
@@ -292,7 +293,7 @@ export default function RepsManagementPage() {
 
         {/* Actions */}
         <div className="flex justify-between items-center mb-6">
-          <h2 className="text-2xl font-bold text-gray-900">Sales Representatives</h2>
+          <h2 className="text-2xl font-bold text-gray-900">Users with Personalized URLs</h2>
           <Button
             onClick={handleCreate}
             className="bg-[rgb(27,208,118)] hover:bg-[rgb(27,208,118)]/90 text-white"
@@ -311,6 +312,9 @@ export default function RepsManagementPage() {
                   <tr>
                     <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
                       Name
+                    </th>
+                    <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
+                      Role
                     </th>
                     <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
                       Email
@@ -332,8 +336,8 @@ export default function RepsManagementPage() {
                 <tbody className="bg-white divide-y divide-gray-200">
                   {reps.length === 0 ? (
                     <tr>
-                      <td colSpan={6} className="px-6 py-12 text-center text-gray-500">
-                        No sales representatives found. Click "Add New Rep" to get started.
+                      <td colSpan={7} className="px-6 py-12 text-center text-gray-500">
+                        No representatives found. Click "Add New Rep" to get started.
                       </td>
                     </tr>
                   ) : (
@@ -341,6 +345,11 @@ export default function RepsManagementPage() {
                       <tr key={rep.id} className="hover:bg-gray-50">
                         <td className="px-6 py-4 whitespace-nowrap">
                           <div className="text-sm font-medium text-gray-900">{rep.name}</div>
+                        </td>
+                        <td className="px-6 py-4 whitespace-nowrap">
+                          <Badge variant={rep.role === 'admin' ? 'default' : 'secondary'} className={rep.role === 'admin' ? 'bg-blue-600' : ''}>
+                            {rep.role === 'admin' ? 'Admin' : 'Rep'}
+                          </Badge>
                         </td>
                         <td className="px-6 py-4 whitespace-nowrap">
                           <div className="text-sm text-gray-500">{rep.email}</div>

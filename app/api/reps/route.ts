@@ -4,7 +4,7 @@ import { getServerSession } from "next-auth"
 import { authOptions } from "@/lib/auth"
 import bcrypt from "bcryptjs"
 
-// GET - List all sales reps
+// GET - List all sales reps and admins with rep codes
 export async function GET(request: NextRequest) {
   try {
     const session = await getServerSession(authOptions)
@@ -15,11 +15,12 @@ export async function GET(request: NextRequest) {
 
     const sql = neon(process.env.DATABASE_URL!)
 
+    // Get all users with rep codes (both reps and admins)
     const reps = await sql`
-      SELECT id, email, name, rep_code, dynamics_user_id, created_at, last_login
+      SELECT id, email, name, rep_code, dynamics_user_id, role, created_at, last_login
       FROM users
-      WHERE role = 'rep'
-      ORDER BY name ASC
+      WHERE role IN ('rep', 'admin') AND rep_code IS NOT NULL
+      ORDER BY role DESC, name ASC
     `
 
     return NextResponse.json(reps)
@@ -129,12 +130,12 @@ export async function PUT(request: NextRequest) {
             dynamics_user_id = ${dynamics_user_id || null},
             password_hash = ${password_hash},
             updated_at = CURRENT_TIMESTAMP
-        WHERE id = ${id} AND role = 'rep'
-        RETURNING id, email, name, rep_code, dynamics_user_id, created_at, updated_at
+        WHERE id = ${id} AND role IN ('rep', 'admin')
+        RETURNING id, email, name, rep_code, dynamics_user_id, role, created_at, updated_at
       `
 
       if (result.length === 0) {
-        return NextResponse.json({ error: "Rep not found" }, { status: 404 })
+        return NextResponse.json({ error: "User not found" }, { status: 404 })
       }
 
       return NextResponse.json(result[0])
@@ -147,12 +148,12 @@ export async function PUT(request: NextRequest) {
             rep_code = ${rep_code},
             dynamics_user_id = ${dynamics_user_id || null},
             updated_at = CURRENT_TIMESTAMP
-        WHERE id = ${id} AND role = 'rep'
-        RETURNING id, email, name, rep_code, dynamics_user_id, created_at, updated_at
+        WHERE id = ${id} AND role IN ('rep', 'admin')
+        RETURNING id, email, name, rep_code, dynamics_user_id, role, created_at, updated_at
       `
 
       if (result.length === 0) {
-        return NextResponse.json({ error: "Rep not found" }, { status: 404 })
+        return NextResponse.json({ error: "User not found" }, { status: 404 })
       }
 
       return NextResponse.json(result[0])
