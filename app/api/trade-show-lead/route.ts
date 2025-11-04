@@ -259,6 +259,7 @@ export async function POST(request: NextRequest) {
             telephone1: phone || "",
             address1_country: region || "",
             numberofemployees: employeeCount,
+            leadsourcecode: 7, // Trade Show
           }
 
           // Assign lead to Dynamics user if configured for this rep
