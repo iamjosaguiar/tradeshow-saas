@@ -145,9 +145,6 @@ export default function LoginPage() {
               {/* Help Text */}
               <div className="mt-6 pt-6 border-t border-gray-200">
                 <p className="text-sm text-center text-muted-foreground">
-                  Default login: admin@cleanspacetechnology.com / admin123
-                </p>
-                <p className="text-xs text-center text-muted-foreground mt-2">
                   Contact your administrator if you need assistance
                 </p>
               </div>

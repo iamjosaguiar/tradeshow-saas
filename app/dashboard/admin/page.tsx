@@ -52,6 +52,7 @@ export default function AdminDashboard() {
     location: "",
     startDate: "",
     endDate: "",
+    defaultCountry: "",
   })
 
   useEffect(() => {
@@ -99,6 +100,7 @@ export default function AdminDashboard() {
           location: formData.location,
           startDate: formData.startDate || null,
           endDate: formData.endDate || null,
+          defaultCountry: formData.defaultCountry || null,
         }),
       })
 
@@ -111,6 +113,7 @@ export default function AdminDashboard() {
           location: "",
           startDate: "",
           endDate: "",
+          defaultCountry: "",
         })
         fetchTradeshows()
       } else {
@@ -489,6 +492,30 @@ export default function AdminDashboard() {
                       className="w-full px-4 py-2 border-2 border-gray-300 rounded-lg focus:ring-2 focus:ring-[rgb(27,208,118)] focus:border-[rgb(27,208,118)] outline-none text-gray-900"
                     />
                   </div>
+                </div>
+
+                <div>
+                  <label className="block text-sm font-semibold text-gray-900 mb-2">Default Country</label>
+                  <select
+                    value={formData.defaultCountry}
+                    onChange={(e) => setFormData({ ...formData, defaultCountry: e.target.value })}
+                    className="w-full px-4 py-2 border-2 border-gray-300 rounded-lg focus:ring-2 focus:ring-[rgb(27,208,118)] focus:border-[rgb(27,208,118)] outline-none text-gray-900"
+                  >
+                    <option value="">No default (users must select)</option>
+                    <option value="France">France</option>
+                    <option value="Nordics">Nordics</option>
+                    <option value="United Kingdom">United Kingdom</option>
+                    <option value="Germany">Germany</option>
+                    <option value="Austria">Austria</option>
+                    <option value="Switzerland - German">Switzerland - German</option>
+                    <option value="Switzerland - French">Switzerland - French</option>
+                    <option value="North America">North America</option>
+                    <option value="South America">South America</option>
+                    <option value="APAC">APAC</option>
+                  </select>
+                  <p className="text-xs text-gray-500 mt-1">
+                    If set, this country will be pre-selected in the form for this tradeshow
+                  </p>
                 </div>
 
                 <div className="bg-blue-50 border border-blue-200 rounded-lg p-4">

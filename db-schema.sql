@@ -24,6 +24,7 @@ CREATE TABLE IF NOT EXISTS tradeshows (
   location VARCHAR(255),
   start_date DATE,
   end_date DATE,
+  default_country VARCHAR(255),
   is_active BOOLEAN DEFAULT true,
   created_by INTEGER REFERENCES users(id) ON DELETE SET NULL,
   created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
@@ -46,6 +47,9 @@ ALTER TABLE badge_photos ADD COLUMN IF NOT EXISTS submitted_by_rep INTEGER REFER
 
 -- Add dynamics_user_id to users table if it doesn't exist
 ALTER TABLE users ADD COLUMN IF NOT EXISTS dynamics_user_id VARCHAR(255);
+
+-- Add default_country to tradeshows table if it doesn't exist
+ALTER TABLE tradeshows ADD COLUMN IF NOT EXISTS default_country VARCHAR(255);
 
 -- Create index for faster queries
 CREATE INDEX IF NOT EXISTS idx_badge_photos_tradeshow ON badge_photos(tradeshow_id);

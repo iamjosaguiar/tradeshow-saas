@@ -7,7 +7,7 @@ export async function POST(request: NextRequest) {
 
     const email = formData.get("email") as string
     const name = formData.get("name") as string
-    const region = formData.get("region") as string
+    const country = formData.get("country") as string
     const comments = formData.get("comments") as string
     const company = formData.get("company") as string
     const role = formData.get("role") as string
@@ -18,14 +18,13 @@ export async function POST(request: NextRequest) {
     const badgePhoto = formData.get("badgePhoto") as File
 
     // Validate required fields
-    if (!email || !name || !region || !badgePhoto) {
+    if (!email || !name || !country) {
       return NextResponse.json({
         error: "Missing required fields",
         missing: {
           email: !email,
           name: !name,
-          region: !region,
-          badgePhoto: !badgePhoto
+          country: !country
         }
       }, { status: 400 })
     }
@@ -43,21 +42,23 @@ export async function POST(request: NextRequest) {
       })
     }
 
-    // Convert file to binary for storage
-    const bytes = await badgePhoto.arrayBuffer()
-    const buffer = Buffer.from(bytes)
-
-    // Save badge photo to Neon DB as binary (bytea)
+    // Convert file to binary for storage (only if badge photo exists)
     const sql = neon(process.env.DATABASE_URL!)
+    let photoUrl = null
+    if (badgePhoto && badgePhoto.size > 0) {
+      const bytes = await badgePhoto.arrayBuffer()
+      const buffer = Buffer.from(bytes)
 
-    const photoResult = await sql`
-      INSERT INTO badge_photos (contact_email, contact_name, filename, mime_type, file_size, image_data, form_source)
-      VALUES (${email}, ${name}, ${badgePhoto.name}, ${badgePhoto.type}, ${badgePhoto.size}, ${buffer}, 'aa-tradeshow-lead')
-      RETURNING id
-    `
+      // Save badge photo to Neon DB as binary (bytea)
+      const photoResult = await sql`
+        INSERT INTO badge_photos (contact_email, contact_name, filename, mime_type, file_size, image_data, form_source)
+        VALUES (${email}, ${name}, ${badgePhoto.name}, ${badgePhoto.type}, ${badgePhoto.size}, ${buffer}, 'aa-tradeshow-lead')
+        RETURNING id
+      `
 
-    const photoId = photoResult[0].id
-    const photoUrl = `${request.nextUrl.origin}/api/badge-photo/${photoId}`
+      const photoId = photoResult[0].id
+      photoUrl = `${request.nextUrl.origin}/api/badge-photo/${photoId}`
+    }
 
     // Create or update contact in ActiveCampaign
     const contactData = {
@@ -113,9 +114,10 @@ export async function POST(request: NextRequest) {
 
     // Add note to contact with badge photo information
     if (contactId) {
+      const photoInfo = photoUrl ? `Badge Photo: ${badgePhoto.name} (${(badgePhoto.size / 1024).toFixed(2)} KB)\n\nBadge Photo URL: ${photoUrl}\n\n` : ""
       const noteData = {
         note: {
-          note: `A+A Tradeshow Lead - Badge Photo: ${badgePhoto.name} (${(badgePhoto.size / 1024).toFixed(2)} KB)\n\nBadge Photo URL: ${photoUrl}\n\nForm Details:\nRegion: ${region || "N/A"}\nCompany: ${company || "N/A"}\nRole: ${role || "N/A"}\nWork Environment: ${workEnvironment || "N/A"}\nNumber of Staff: ${numberOfStaff || "N/A"}\nCurrent Respirator: ${currentRespirator || "N/A"}${repName ? `\n\nCleanSpace Rep: ${repName}` : ""}${comments ? `\n\nDiscussion Comments:\n${comments}` : ""}`,
+          note: `A+A Tradeshow Lead - ${photoInfo}Form Details:\nCountry: ${country || "N/A"}\nCompany: ${company || "N/A"}\nRole: ${role || "N/A"}\nWork Environment: ${workEnvironment || "N/A"}\nNumber of Staff: ${numberOfStaff || "N/A"}\nCurrent Respirator: ${currentRespirator || "N/A"}${repName ? `\n\nCleanSpace Rep: ${repName}` : ""}${comments ? `\n\nDiscussion Comments:\n${comments}` : ""}`,
           relid: contactId,
           reltype: "Subscriber",
         },

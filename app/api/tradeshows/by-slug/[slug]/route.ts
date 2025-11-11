@@ -10,7 +10,7 @@ export async function GET(
     const slug = params.slug
 
     const tradeshows = await sql`
-      SELECT id, name, slug, description, location, start_date, end_date, is_active, created_at
+      SELECT id, name, slug, description, location, start_date, end_date, default_country, is_active, created_at
       FROM tradeshows
       WHERE slug = ${slug}
       LIMIT 1

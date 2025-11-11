@@ -30,6 +30,7 @@ export async function GET(request: NextRequest) {
           t.location,
           t.start_date,
           t.end_date,
+          t.default_country,
           t.is_active,
           t.created_at,
           t.updated_at,
@@ -52,6 +53,7 @@ export async function GET(request: NextRequest) {
           t.location,
           t.start_date,
           t.end_date,
+          t.default_country,
           t.is_active,
           t.created_at,
           t.updated_at,
@@ -94,7 +96,7 @@ export async function POST(request: NextRequest) {
     }
 
     const body = await request.json()
-    const { name, slug, description, location, startDate, endDate } = body
+    const { name, slug, description, location, startDate, endDate, defaultCountry } = body
 
     if (!name || !slug) {
       return NextResponse.json({ error: "Name and slug are required" }, { status: 400 })
@@ -113,7 +115,7 @@ export async function POST(request: NextRequest) {
 
     // Create tradeshow
     const result = await sql`
-      INSERT INTO tradeshows (name, slug, description, location, start_date, end_date, is_active, created_by)
+      INSERT INTO tradeshows (name, slug, description, location, start_date, end_date, default_country, is_active, created_by)
       VALUES (
         ${name},
         ${slug},
@@ -121,10 +123,11 @@ export async function POST(request: NextRequest) {
         ${location || null},
         ${startDate || null},
         ${endDate || null},
+        ${defaultCountry || null},
         true,
         ${session.user.id}
       )
-      RETURNING id, name, slug, description, location, start_date, end_date, is_active, created_at
+      RETURNING id, name, slug, description, location, start_date, end_date, default_country, is_active, created_at
     `
 
     const tradeshowId = result[0].id

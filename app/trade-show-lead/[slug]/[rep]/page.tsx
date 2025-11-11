@@ -14,8 +14,8 @@ interface FormData {
   email: string
   name: string
   phone: string
-  region: string
-  otherRegion: string
+  country: string
+  otherCountry: string
   comments: string
   company: string
   role: string
@@ -28,8 +28,8 @@ interface FormData {
 interface FormErrors {
   email?: string
   name?: string
-  region?: string
-  otherRegion?: string
+  country?: string
+  otherCountry?: string
   badgePhoto?: string
 }
 
@@ -41,6 +41,7 @@ interface Tradeshow {
   location: string
   start_date: string
   end_date: string
+  default_country: string | null
   is_active: boolean
 }
 
@@ -63,8 +64,8 @@ export default function TradeshowRepLeadForm() {
     email: "",
     name: "",
     phone: "",
-    region: "",
-    otherRegion: "",
+    country: "",
+    otherCountry: "",
     comments: "",
     company: "",
     role: "",
@@ -91,6 +92,11 @@ export default function TradeshowRepLeadForm() {
         if (tradeshowRes.ok) {
           const tradeshowData = await tradeshowRes.json()
           setTradeshow(tradeshowData)
+
+          // Pre-populate country if default is set
+          if (tradeshowData.default_country) {
+            setFormData(prev => ({ ...prev, country: tradeshowData.default_country }))
+          }
         }
 
         if (repRes.ok) {
@@ -131,17 +137,14 @@ export default function TradeshowRepLeadForm() {
       newErrors.name = "Name is required"
     }
 
-    if (!formData.region) {
-      newErrors.region = "Region is required"
+    if (!formData.country) {
+      newErrors.country = "Country is required"
     }
 
-    if (formData.region === "Other" && !formData.otherRegion.trim()) {
+    if (formData.country === "Other" && !formData.otherCountry.trim()) {
       newErrors.otherRegion = "Please specify your country"
     }
 
-    if (!formData.badgePhoto) {
-      newErrors.badgePhoto = "Badge photo is required"
-    }
 
     setErrors(newErrors)
     return Object.keys(newErrors).length === 0
@@ -191,7 +194,7 @@ export default function TradeshowRepLeadForm() {
       formDataToSend.append("email", formData.email)
       formDataToSend.append("name", formData.name)
       formDataToSend.append("phone", formData.phone)
-      formDataToSend.append("region", formData.region === "Other" ? formData.otherRegion : formData.region)
+      formDataToSend.append("country", formData.country === "Other" ? formData.otherCountry : formData.country)
       formDataToSend.append("comments", formData.comments)
       formDataToSend.append("company", formData.company)
       formDataToSend.append("role", formData.role)
@@ -370,7 +373,7 @@ export default function TradeshowRepLeadForm() {
                 {/* Name */}
                 <div>
                   <label htmlFor="name" className="block text-sm font-semibold text-foreground mb-2">
-                    Full Name *
+                    Name *
                   </label>
                   <input
                     type="text"
@@ -400,23 +403,23 @@ export default function TradeshowRepLeadForm() {
                   />
                 </div>
 
-                {/* Region */}
+                {/* Country */}
                 <div>
-                  <label htmlFor="region" className="block text-sm font-semibold text-foreground mb-2">
-                    Region *
+                  <label htmlFor="country" className="block text-sm font-semibold text-foreground mb-2">
+                    Country *
                   </label>
                   <select
-                    id="region"
-                    value={formData.region}
+                    id="country"
+                    value={formData.country}
                     onChange={(e) => {
                       setFormData({ ...formData, region: e.target.value, otherRegion: "" })
                       setErrors({ ...errors, region: undefined, otherRegion: undefined })
                     }}
                     className={`w-full px-4 py-3 rounded-lg border-2 ${
-                      errors.region ? "border-red-500" : "border-gray-300"
+                      errors.country ? "border-red-500" : "border-gray-300"
                     } focus:border-[rgb(27,208,118)] focus:ring-2 focus:ring-[rgb(27,208,118)]/20 outline-none transition-all text-base bg-white`}
                   >
-                    <option value="">Select a region...</option>
+                    <option value="">Select a country...</option>
                     <option value="France">France</option>
                     <option value="Nordics">Nordics</option>
                     <option value="United Kingdom">United Kingdom</option>
@@ -429,29 +432,29 @@ export default function TradeshowRepLeadForm() {
                     <option value="APAC">APAC</option>
                     <option value="Other">Other</option>
                   </select>
-                  {errors.region && <p className="mt-1 text-sm text-red-500">{errors.region}</p>}
+                  {errors.country && <p className="mt-1 text-sm text-red-500">{errors.country}</p>}
                 </div>
 
-                {/* Other Region */}
-                {formData.region === "Other" && (
+                {/* Other Country */}
+                {formData.country === "Other" && (
                   <div>
-                    <label htmlFor="otherRegion" className="block text-sm font-semibold text-foreground mb-2">
+                    <label htmlFor="otherCountry" className="block text-sm font-semibold text-foreground mb-2">
                       Please specify your country *
                     </label>
                     <input
                       type="text"
-                      id="otherRegion"
-                      value={formData.otherRegion}
+                      id="otherCountry"
+                      value={formData.otherCountry}
                       onChange={(e) => {
                         setFormData({ ...formData, otherRegion: e.target.value })
                         setErrors({ ...errors, otherRegion: undefined })
                       }}
                       className={`w-full px-4 py-3 rounded-lg border-2 ${
-                        errors.otherRegion ? "border-red-500" : "border-gray-300"
+                        errors.otherCountry ? "border-red-500" : "border-gray-300"
                       } focus:border-[rgb(27,208,118)] focus:ring-2 focus:ring-[rgb(27,208,118)]/20 outline-none transition-all text-base`}
                       placeholder="Enter your country"
                     />
-                    {errors.otherRegion && <p className="mt-1 text-sm text-red-500">{errors.otherRegion}</p>}
+                    {errors.otherCountry && <p className="mt-1 text-sm text-red-500">{errors.otherCountry}</p>}
                   </div>
                 )}
 
@@ -548,7 +551,7 @@ export default function TradeshowRepLeadForm() {
                 {/* Badge Photo Upload */}
                 <div>
                   <label htmlFor="badgePhoto" className="block text-sm font-semibold text-foreground mb-2">
-                    Upload Badge Photo *
+                    Upload Badge Photo
                   </label>
                   <div className="mt-2">
                     <label
