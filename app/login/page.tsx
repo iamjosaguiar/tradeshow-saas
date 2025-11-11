@@ -3,6 +3,7 @@
 import { useState } from "react"
 import { signIn } from "next-auth/react"
 import { useRouter } from "next/navigation"
+import Link from "next/link"
 import { Button } from "@/components/ui/button"
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card"
 import { Badge } from "@/components/ui/badge"
@@ -105,9 +106,17 @@ export default function LoginPage() {
 
                 {/* Password Input */}
                 <div>
-                  <label htmlFor="password" className="block text-sm font-semibold text-foreground mb-2">
-                    Password
-                  </label>
+                  <div className="flex items-center justify-between mb-2">
+                    <label htmlFor="password" className="block text-sm font-semibold text-foreground">
+                      Password
+                    </label>
+                    <Link
+                      href="/forgot-password"
+                      className="text-sm text-[rgb(27,208,118)] hover:text-[rgb(27,208,118)]/80 font-medium"
+                    >
+                      Forgot password?
+                    </Link>
+                  </div>
                   <input
                     type="password"
                     id="password"

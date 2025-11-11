@@ -51,6 +51,10 @@ ALTER TABLE users ADD COLUMN IF NOT EXISTS dynamics_user_id VARCHAR(255);
 -- Add default_country to tradeshows table if it doesn't exist
 ALTER TABLE tradeshows ADD COLUMN IF NOT EXISTS default_country VARCHAR(255);
 
+-- Add password reset fields to users table if they don't exist
+ALTER TABLE users ADD COLUMN IF NOT EXISTS password_reset_token VARCHAR(255);
+ALTER TABLE users ADD COLUMN IF NOT EXISTS password_reset_expires TIMESTAMP;
+
 -- Create index for faster queries
 CREATE INDEX IF NOT EXISTS idx_badge_photos_tradeshow ON badge_photos(tradeshow_id);
 CREATE INDEX IF NOT EXISTS idx_badge_photos_form_source ON badge_photos(form_source);
