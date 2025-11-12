@@ -30,12 +30,14 @@ export async function POST(request: NextRequest) {
     // Look up tradeshow ID from slug
     let tradeshowId: number | null = null
     let activeCampaignTagId: string | null = null
+    let isSelfManagedEvent = false
 
     if (tradeshowSlug) {
       const tradeshows = await sql`
-        SELECT t.id, tt.tag_value as activecampaign_tag_id
+        SELECT t.id, tt.tag_value as activecampaign_tag_id, u.role as created_by_role
         FROM tradeshows t
         LEFT JOIN tradeshow_tags tt ON t.id = tt.tradeshow_id AND tt.tag_name = 'activecampaign_tag_id'
+        LEFT JOIN users u ON t.created_by = u.id
         WHERE t.slug = ${tradeshowSlug}
         LIMIT 1
       `
@@ -43,6 +45,7 @@ export async function POST(request: NextRequest) {
       if (tradeshows.length > 0) {
         tradeshowId = tradeshows[0].id
         activeCampaignTagId = tradeshows[0].activecampaign_tag_id
+        isSelfManagedEvent = tradeshows[0].created_by_role === 'rep'
       }
     }
 
@@ -70,7 +73,10 @@ export async function POST(request: NextRequest) {
     const AC_API_URL = process.env.ACTIVECAMPAIGN_API_URL
     const AC_API_KEY = process.env.ACTIVECAMPAIGN_API_KEY
 
-    if (!AC_API_URL || !AC_API_KEY) {
+    // Skip ActiveCampaign sync for self managed events
+    if (isSelfManagedEvent) {
+      console.log("Skipping ActiveCampaign sync for self managed event")
+    } else if (!AC_API_URL || !AC_API_KEY) {
       console.error("ActiveCampaign credentials not configured")
       // Return success even if AC is not configured to prevent form errors during setup
       return NextResponse.json({
@@ -96,116 +102,120 @@ export async function POST(request: NextRequest) {
       photoUrl = `${request.nextUrl.origin}/api/badge-photo/${photoId}`
     }
 
-    // Create or update contact in ActiveCampaign
-    const contactData = {
-      contact: {
-        email: email,
-        firstName: name.split(" ")[0] || name,
-        lastName: name.split(" ").slice(1).join(" ") || "",
-        phone: phone || "",
-        fieldValues: [
-          {
-            field: "1", // Country
-            value: country || "",
-          },
-          {
-            field: "4", // Job Title (using for Role)
-            value: role || "",
-          },
-          {
-            field: "8", // Company
-            value: company || "",
-          },
-          {
-            field: "9", // Comments
-            value: comments || "",
-          },
-          {
-            field: "11", // Current Respirator
-            value: currentRespirator || "",
-          },
-          {
-            field: "12", // Work Environment
-            value: workEnvironment || "",
-          },
-          {
-            field: "13", // Number of Staff
-            value: numberOfStaff || "",
-          },
-          {
-            field: "14", // Sales Manager
-            value: repName || "",
-          },
-        ],
-      },
-    }
-
-    // Add contact to ActiveCampaign
-    const acResponse = await fetch(`${AC_API_URL}/api/3/contacts`, {
-      method: "POST",
-      headers: {
-        "Api-Token": AC_API_KEY,
-        "Content-Type": "application/json",
-      },
-      body: JSON.stringify(contactData),
-    })
-
-    if (!acResponse.ok) {
-      const errorText = await acResponse.text()
-      console.error("ActiveCampaign API error:", errorText)
-
-      // Still return success to user, but log the error
-      return NextResponse.json({
-        success: true,
-        message: "Form submitted (ActiveCampaign sync pending)",
-      })
-    }
-
-    const acResult = await acResponse.json()
-    const contactId = acResult.contact?.id
-
-    // Add note to contact with badge photo URL only
-    // All other form data is now stored in custom fields
-    if (contactId) {
-      const repInfo = repName ? `\nCaptured by Rep: ${repName} (${repCode})` : ""
-      const tradeshowInfo = tradeshowSlug ? `\nTradeshow: ${tradeshowSlug}` : ""
-      const photoInfo = photoUrl ? `\n\nBadge Photo: ${badgePhoto.name} (${(badgePhoto.size / 1024).toFixed(2)} KB)\nBadge Photo URL: ${photoUrl}` : ""
-
-      const noteData = {
-        note: {
-          note: `Trade Show Lead Submission${photoInfo}${tradeshowInfo}${repInfo}`,
-          relid: contactId,
-          reltype: "Subscriber",
+    // ActiveCampaign sync (skip for self managed events)
+    let contactId = null
+    if (!isSelfManagedEvent) {
+      // Create or update contact in ActiveCampaign
+      const contactData = {
+        contact: {
+          email: email,
+          firstName: name.split(" ")[0] || name,
+          lastName: name.split(" ").slice(1).join(" ") || "",
+          phone: phone || "",
+          fieldValues: [
+            {
+              field: "1", // Country
+              value: country || "",
+            },
+            {
+              field: "4", // Job Title (using for Role)
+              value: role || "",
+            },
+            {
+              field: "8", // Company
+              value: company || "",
+            },
+            {
+              field: "9", // Comments
+              value: comments || "",
+            },
+            {
+              field: "11", // Current Respirator
+              value: currentRespirator || "",
+            },
+            {
+              field: "12", // Work Environment
+              value: workEnvironment || "",
+            },
+            {
+              field: "13", // Number of Staff
+              value: numberOfStaff || "",
+            },
+            {
+              field: "14", // Sales Manager
+              value: repName || "",
+            },
+          ],
         },
       }
 
-      await fetch(`${AC_API_URL}/api/3/notes`, {
+      // Add contact to ActiveCampaign
+      const acResponse = await fetch(`${AC_API_URL}/api/3/contacts`, {
         method: "POST",
         headers: {
           "Api-Token": AC_API_KEY,
           "Content-Type": "application/json",
         },
-        body: JSON.stringify(noteData),
+        body: JSON.stringify(contactData),
       })
-    }
 
-    // Tag the contact with the tradeshow's ActiveCampaign tag (if configured)
-    if (contactId && activeCampaignTagId) {
-      const tagData = {
-        contactTag: {
-          contact: contactId,
-          tag: activeCampaignTagId,
-        },
+      if (!acResponse.ok) {
+        const errorText = await acResponse.text()
+        console.error("ActiveCampaign API error:", errorText)
+
+        // Still return success to user, but log the error
+        return NextResponse.json({
+          success: true,
+          message: "Form submitted (ActiveCampaign sync pending)",
+        })
       }
 
-      await fetch(`${AC_API_URL}/api/3/contactTags`, {
-        method: "POST",
-        headers: {
-          "Api-Token": AC_API_KEY,
-          "Content-Type": "application/json",
-        },
-        body: JSON.stringify(tagData),
-      })
+      const acResult = await acResponse.json()
+      contactId = acResult.contact?.id
+
+      // Add note to contact with badge photo URL only
+      // All other form data is now stored in custom fields
+      if (contactId) {
+        const repInfo = repName ? `\nCaptured by Rep: ${repName} (${repCode})` : ""
+        const tradeshowInfo = tradeshowSlug ? `\nTradeshow: ${tradeshowSlug}` : ""
+        const photoInfo = photoUrl ? `\n\nBadge Photo: ${badgePhoto.name} (${(badgePhoto.size / 1024).toFixed(2)} KB)\nBadge Photo URL: ${photoUrl}` : ""
+
+        const noteData = {
+          note: {
+            note: `Trade Show Lead Submission${photoInfo}${tradeshowInfo}${repInfo}`,
+            relid: contactId,
+            reltype: "Subscriber",
+          },
+        }
+
+        await fetch(`${AC_API_URL}/api/3/notes`, {
+          method: "POST",
+          headers: {
+            "Api-Token": AC_API_KEY,
+            "Content-Type": "application/json",
+          },
+          body: JSON.stringify(noteData),
+        })
+      }
+
+      // Tag the contact with the tradeshow's ActiveCampaign tag (if configured)
+      if (contactId && activeCampaignTagId) {
+        const tagData = {
+          contactTag: {
+            contact: contactId,
+            tag: activeCampaignTagId,
+          },
+        }
+
+        await fetch(`${AC_API_URL}/api/3/contactTags`, {
+          method: "POST",
+          headers: {
+            "Api-Token": AC_API_KEY,
+            "Content-Type": "application/json",
+          },
+          body: JSON.stringify(tagData),
+        })
+      }
     }
 
     // Create Lead in Dynamics 365
