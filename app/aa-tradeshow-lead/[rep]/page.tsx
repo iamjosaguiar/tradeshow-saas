@@ -7,12 +7,12 @@ import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/com
 import { Badge } from "@/components/ui/badge"
 import { Upload, CheckCircle, Loader2 } from "lucide-react"
 import { track } from "@vercel/analytics"
+import { CountrySelect } from "@/components/country-select"
 
 interface FormData {
   email: string
   name: string
   country: string
-  otherCountry: string
   comments: string
   company: string
   role: string
@@ -26,7 +26,6 @@ interface FormErrors {
   email?: string
   name?: string
   country?: string
-  otherCountry?: string
   badgePhoto?: string
 }
 
@@ -50,7 +49,6 @@ export default function AATradeShowRepForm() {
     email: "",
     name: "",
     country: "",
-    otherCountry: "",
     comments: "",
     company: "",
     role: "",
@@ -88,13 +86,8 @@ export default function AATradeShowRepForm() {
     }
 
     if (!formData.country) {
-      newErrors.region = "Country is required"
+      newErrors.country = "Country is required"
     }
-
-    if (formData.country === "Other" && !formData.otherCountry.trim()) {
-      newErrors.otherRegion = "Please specify your country"
-    }
-
 
     setErrors(newErrors)
     return Object.keys(newErrors).length === 0
@@ -127,7 +120,7 @@ export default function AATradeShowRepForm() {
       const submitData = new FormData()
       submitData.append("email", formData.email)
       submitData.append("name", formData.name)
-      submitData.append("region", formData.country === "Other" ? formData.otherCountry : formData.country)
+      submitData.append("region", formData.country)
       submitData.append("comments", formData.comments)
       submitData.append("company", formData.company)
       submitData.append("role", formData.role)
@@ -156,7 +149,6 @@ export default function AATradeShowRepForm() {
           email: "",
           name: "",
           country: "",
-          otherCountry: "",
           comments: "",
           company: "",
           role: "",
@@ -175,21 +167,6 @@ export default function AATradeShowRepForm() {
       setIsSubmitting(false)
     }
   }
-
-  const regions = [
-    "Germany",
-    "France",
-    "United Kingdom",
-    "Spain",
-    "Italy",
-    "Netherlands",
-    "Belgium",
-    "Switzerland",
-    "Austria",
-    "Poland",
-    "Sweden",
-    "Other",
-  ]
 
   return (
     <div className="min-h-screen bg-gradient-to-br from-blue-50 to-indigo-100 py-12 px-4 sm:px-6 lg:px-8">
@@ -255,43 +232,19 @@ export default function AATradeShowRepForm() {
                 <label htmlFor="country" className="block text-sm font-medium text-gray-700 mb-2">
                   Country *
                 </label>
-                <select
-                  id="country"
+                <CountrySelect
                   value={formData.country}
-                  onChange={(e) => setFormData({ ...formData, region: e.target.value, otherRegion: "" })}
+                  onChange={(value) => {
+                    setFormData({ ...formData, country: value })
+                    setErrors({ ...errors, country: undefined })
+                  }}
                   className={`w-full px-4 py-2 border rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent ${
                     errors.country ? "border-red-500" : "border-gray-300"
                   }`}
-                >
-                  <option value="">Select your region</option>
-                  {regions.map((region) => (
-                    <option key={region} value={region}>
-                      {region}
-                    </option>
-                  ))}
-                </select>
+                  required
+                />
                 {errors.country && <p className="text-red-500 text-sm mt-1">{errors.country}</p>}
               </div>
-
-              {/* Other Region Input */}
-              {formData.country === "Other" && (
-                <div>
-                  <label htmlFor="otherCountry" className="block text-sm font-medium text-gray-700 mb-2">
-                    Please specify your country *
-                  </label>
-                  <input
-                    id="otherCountry"
-                    type="text"
-                    value={formData.otherCountry}
-                    onChange={(e) => setFormData({ ...formData, otherRegion: e.target.value })}
-                    className={`w-full px-4 py-2 border rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent ${
-                      errors.otherCountry ? "border-red-500" : "border-gray-300"
-                    }`}
-                    placeholder="Enter your country"
-                  />
-                  {errors.otherCountry && <p className="text-red-500 text-sm mt-1">{errors.otherCountry}</p>}
-                </div>
-              )}
 
               {/* Comments */}
               <div>

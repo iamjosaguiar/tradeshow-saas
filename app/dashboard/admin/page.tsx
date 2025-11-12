@@ -22,6 +22,7 @@ import {
   Trash2,
   ArchiveRestore,
 } from "lucide-react"
+import { CountrySelect } from "@/components/country-select"
 
 interface Tradeshow {
   id: number
@@ -36,12 +37,21 @@ interface Tradeshow {
   submission_count: string
   created_by_name: string
   tags: Array<{ tag_name: string; tag_value: string }>
+  assignedReps?: Array<{ id: number; name: string; email: string }>
+}
+
+interface Rep {
+  id: number
+  name: string
+  email: string
+  rep_code: string
 }
 
 export default function AdminDashboard() {
   const { data: session, status } = useSession()
   const router = useRouter()
   const [tradeshows, setTradeshows] = useState<Tradeshow[]>([])
+  const [reps, setReps] = useState<Rep[]>([])
   const [loading, setLoading] = useState(true)
   const [showCreateModal, setShowCreateModal] = useState(false)
   const [creating, setCreating] = useState(false)
@@ -52,6 +62,7 @@ export default function AdminDashboard() {
   const [showDeleteModal, setShowDeleteModal] = useState(false)
   const [deleteConfirmation, setDeleteConfirmation] = useState("")
   const [tradeshowToDelete, setTradeshowToDelete] = useState<{ id: number; name: string } | null>(null)
+  const [selectedReps, setSelectedReps] = useState<number[]>([])
 
   // Form state
   const [formData, setFormData] = useState({
@@ -78,6 +89,7 @@ export default function AdminDashboard() {
     }
 
     fetchTradeshows()
+    fetchReps()
   }, [session, status, router])
 
   const fetchTradeshows = async () => {
@@ -619,23 +631,13 @@ export default function AdminDashboard() {
 
                 <div>
                   <label className="block text-sm font-semibold text-gray-900 mb-2">Default Country</label>
-                  <select
+                  <CountrySelect
                     value={formData.defaultCountry}
-                    onChange={(e) => setFormData({ ...formData, defaultCountry: e.target.value })}
+                    onChange={(value) => setFormData({ ...formData, defaultCountry: value })}
                     className="w-full px-4 py-2 border-2 border-gray-300 rounded-lg focus:ring-2 focus:ring-[rgb(27,208,118)] focus:border-[rgb(27,208,118)] outline-none text-gray-900"
-                  >
-                    <option value="">No default (users must select)</option>
-                    <option value="France">France</option>
-                    <option value="Nordics">Nordics</option>
-                    <option value="United Kingdom">United Kingdom</option>
-                    <option value="Germany">Germany</option>
-                    <option value="Austria">Austria</option>
-                    <option value="Switzerland - German">Switzerland - German</option>
-                    <option value="Switzerland - French">Switzerland - French</option>
-                    <option value="North America">North America</option>
-                    <option value="South America">South America</option>
-                    <option value="APAC">APAC</option>
-                  </select>
+                    allowEmpty
+                    emptyLabel="No default (users must select)"
+                  />
                   <p className="text-xs text-gray-500 mt-1">
                     If set, this country will be pre-selected in the form for this tradeshow
                   </p>

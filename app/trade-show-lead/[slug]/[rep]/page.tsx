@@ -9,13 +9,13 @@ import { Upload, CheckCircle, Loader2, Calendar, MapPin, User } from "lucide-rea
 import { track } from "@vercel/analytics"
 import PhoneInput from "react-phone-number-input"
 import "react-phone-number-input/style.css"
+import { CountrySelect } from "@/components/country-select"
 
 interface FormData {
   email: string
   name: string
   phone: string
   country: string
-  otherCountry: string
   comments: string
   company: string
   role: string
@@ -29,7 +29,6 @@ interface FormErrors {
   email?: string
   name?: string
   country?: string
-  otherCountry?: string
   badgePhoto?: string
 }
 
@@ -65,7 +64,6 @@ export default function TradeshowRepLeadForm() {
     name: "",
     phone: "",
     country: "",
-    otherCountry: "",
     comments: "",
     company: "",
     role: "",
@@ -141,11 +139,6 @@ export default function TradeshowRepLeadForm() {
       newErrors.country = "Country is required"
     }
 
-    if (formData.country === "Other" && !formData.otherCountry.trim()) {
-      newErrors.otherRegion = "Please specify your country"
-    }
-
-
     setErrors(newErrors)
     return Object.keys(newErrors).length === 0
   }
@@ -194,7 +187,7 @@ export default function TradeshowRepLeadForm() {
       formDataToSend.append("email", formData.email)
       formDataToSend.append("name", formData.name)
       formDataToSend.append("phone", formData.phone)
-      formDataToSend.append("country", formData.country === "Other" ? formData.otherCountry : formData.country)
+      formDataToSend.append("country", formData.country)
       formDataToSend.append("comments", formData.comments)
       formDataToSend.append("company", formData.company)
       formDataToSend.append("role", formData.role)
@@ -223,8 +216,7 @@ export default function TradeshowRepLeadForm() {
           email: "",
           name: "",
           phone: "",
-          region: "",
-          otherRegion: "",
+          country: "",
           comments: "",
           company: "",
           role: "",
@@ -408,55 +400,19 @@ export default function TradeshowRepLeadForm() {
                   <label htmlFor="country" className="block text-sm font-semibold text-foreground mb-2">
                     Country *
                   </label>
-                  <select
-                    id="country"
+                  <CountrySelect
                     value={formData.country}
-                    onChange={(e) => {
-                      setFormData({ ...formData, region: e.target.value, otherRegion: "" })
-                      setErrors({ ...errors, region: undefined, otherRegion: undefined })
+                    onChange={(value) => {
+                      setFormData({ ...formData, country: value })
+                      setErrors({ ...errors, country: undefined })
                     }}
                     className={`w-full px-4 py-3 rounded-lg border-2 ${
                       errors.country ? "border-red-500" : "border-gray-300"
                     } focus:border-[rgb(27,208,118)] focus:ring-2 focus:ring-[rgb(27,208,118)]/20 outline-none transition-all text-base bg-white`}
-                  >
-                    <option value="">Select a country...</option>
-                    <option value="France">France</option>
-                    <option value="Nordics">Nordics</option>
-                    <option value="United Kingdom">United Kingdom</option>
-                    <option value="Germany">Germany</option>
-                    <option value="Austria">Austria</option>
-                    <option value="Switzerland - German">Switzerland - German</option>
-                    <option value="Switzerland - French">Switzerland - French</option>
-                    <option value="North America">North America</option>
-                    <option value="South America">South America</option>
-                    <option value="APAC">APAC</option>
-                    <option value="Other">Other</option>
-                  </select>
+                    required
+                  />
                   {errors.country && <p className="mt-1 text-sm text-red-500">{errors.country}</p>}
                 </div>
-
-                {/* Other Country */}
-                {formData.country === "Other" && (
-                  <div>
-                    <label htmlFor="otherCountry" className="block text-sm font-semibold text-foreground mb-2">
-                      Please specify your country *
-                    </label>
-                    <input
-                      type="text"
-                      id="otherCountry"
-                      value={formData.otherCountry}
-                      onChange={(e) => {
-                        setFormData({ ...formData, otherRegion: e.target.value })
-                        setErrors({ ...errors, otherRegion: undefined })
-                      }}
-                      className={`w-full px-4 py-3 rounded-lg border-2 ${
-                        errors.otherCountry ? "border-red-500" : "border-gray-300"
-                      } focus:border-[rgb(27,208,118)] focus:ring-2 focus:ring-[rgb(27,208,118)]/20 outline-none transition-all text-base`}
-                      placeholder="Enter your country"
-                    />
-                    {errors.otherCountry && <p className="mt-1 text-sm text-red-500">{errors.otherCountry}</p>}
-                  </div>
-                )}
 
                 {/* Discussion Comments */}
                 <div>
