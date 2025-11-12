@@ -19,6 +19,7 @@ import {
   Edit,
   X,
 } from "lucide-react"
+import { CountrySelect } from "@/components/country-select"
 
 interface Tradeshow {
   id: number
@@ -28,6 +29,7 @@ interface Tradeshow {
   location: string
   start_date: string
   end_date: string
+  default_country: string | null
   is_active: boolean
   submission_count: string
   created_by_name: string
@@ -65,6 +67,7 @@ export default function TradeshowDetailPage() {
     location: "",
     startDate: "",
     endDate: "",
+    defaultCountry: "",
     isActive: true,
     activeCampaignTagName: "",
   })
@@ -137,6 +140,7 @@ export default function TradeshowDetailPage() {
       location: tradeshow.location || "",
       startDate: tradeshow.start_date ? tradeshow.start_date.split("T")[0] : "",
       endDate: tradeshow.end_date ? tradeshow.end_date.split("T")[0] : "",
+      defaultCountry: tradeshow.default_country || "",
       isActive: tradeshow.is_active,
       activeCampaignTagName: defaultTagName,
     })
@@ -167,6 +171,7 @@ export default function TradeshowDetailPage() {
           location: editFormData.location,
           startDate: editFormData.startDate || null,
           endDate: editFormData.endDate || null,
+          defaultCountry: editFormData.defaultCountry || null,
           isActive: editFormData.isActive,
           activeCampaignTagName: editFormData.activeCampaignTagName || null,
           assignedReps: selectedReps,
@@ -295,6 +300,14 @@ export default function TradeshowDetailPage() {
                 <span className="font-medium">{tradeshow.submission_count} submissions</span>
               </div>
             </div>
+
+            {tradeshow.default_country && (
+              <div className="mb-6">
+                <Badge variant="outline" className="bg-blue-50 text-blue-700 border-blue-200">
+                  Default Country: {tradeshow.default_country}
+                </Badge>
+              </div>
+            )}
 
             {/* Form URL */}
             <div className="border-t pt-6">
@@ -502,6 +515,20 @@ export default function TradeshowDetailPage() {
                       className="w-full px-4 py-2 border-2 border-gray-300 rounded-lg focus:ring-2 focus:ring-[rgb(27,208,118)] focus:border-[rgb(27,208,118)] outline-none text-gray-900"
                     />
                   </div>
+                </div>
+
+                <div>
+                  <label className="block text-sm font-semibold text-gray-900 mb-2">Default Country</label>
+                  <CountrySelect
+                    value={editFormData.defaultCountry}
+                    onChange={(value) => setEditFormData({ ...editFormData, defaultCountry: value })}
+                    className="w-full px-4 py-2 border-2 border-gray-300 rounded-lg focus:ring-2 focus:ring-[rgb(27,208,118)] focus:border-[rgb(27,208,118)] outline-none text-gray-900"
+                    allowEmpty
+                    emptyLabel="No default (users must select)"
+                  />
+                  <p className="text-xs text-gray-500 mt-1">
+                    If set, this country will be pre-selected in the form for this tradeshow
+                  </p>
                 </div>
 
                 <div>

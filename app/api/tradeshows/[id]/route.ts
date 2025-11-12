@@ -95,7 +95,7 @@ export async function PATCH(request: NextRequest, { params }: { params: { id: st
     const tradeshowId = parseInt(params.id)
     const body = await request.json()
 
-    const { name, description, location, startDate, endDate, isActive, activeCampaignTagName, assignedReps } = body
+    const { name, description, location, startDate, endDate, defaultCountry, isActive, activeCampaignTagName, assignedReps } = body
 
     // Update tradeshow
     await sql`
@@ -106,6 +106,7 @@ export async function PATCH(request: NextRequest, { params }: { params: { id: st
         location = ${location},
         start_date = ${startDate},
         end_date = ${endDate},
+        default_country = ${defaultCountry},
         is_active = ${isActive},
         updated_at = NOW()
       WHERE id = ${tradeshowId}
