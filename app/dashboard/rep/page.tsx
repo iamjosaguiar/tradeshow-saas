@@ -16,6 +16,8 @@ import {
   ExternalLink,
   Users,
   Settings,
+  Plus,
+  X,
 } from "lucide-react"
 
 interface Tradeshow {
@@ -39,6 +41,19 @@ export default function RepDashboard() {
   const [copiedId, setCopiedId] = useState<number | null>(null)
   const [sortBy, setSortBy] = useState<string>("newest")
   const [filterBy, setFilterBy] = useState<string>("all")
+  const [showCreateModal, setShowCreateModal] = useState(false)
+  const [creating, setCreating] = useState(false)
+
+  // Form state
+  const [formData, setFormData] = useState({
+    name: "",
+    slug: "",
+    description: "",
+    location: "",
+    startDate: "",
+    endDate: "",
+    defaultCountry: "",
+  })
 
   useEffect(() => {
     if (status === "loading") return
@@ -82,6 +97,57 @@ export default function RepDashboard() {
     navigator.clipboard.writeText(link)
     setCopiedId(tradeshowId)
     setTimeout(() => setCopiedId(null), 2000)
+  }
+
+  const handleSlugGeneration = (name: string) => {
+    const slug = name
+      .toLowerCase()
+      .replace(/[^a-z0-9]+/g, "-")
+      .replace(/^-|-$/g, "")
+    setFormData({ ...formData, name, slug })
+  }
+
+  const handleCreateTradeshow = async (e: React.FormEvent) => {
+    e.preventDefault()
+    setCreating(true)
+
+    try {
+      const response = await fetch("/api/tradeshows", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({
+          name: formData.name,
+          slug: formData.slug,
+          description: formData.description,
+          location: formData.location,
+          startDate: formData.startDate || null,
+          endDate: formData.endDate || null,
+          defaultCountry: formData.defaultCountry || null,
+        }),
+      })
+
+      if (response.ok) {
+        setShowCreateModal(false)
+        setFormData({
+          name: "",
+          slug: "",
+          description: "",
+          location: "",
+          startDate: "",
+          endDate: "",
+          defaultCountry: "",
+        })
+        fetchTradeshows()
+      } else {
+        const error = await response.json()
+        alert(error.error || "Failed to create tradeshow")
+      }
+    } catch (error) {
+      console.error("Error creating tradeshow:", error)
+      alert("An error occurred")
+    } finally {
+      setCreating(false)
+    }
   }
 
   const getFilteredAndSortedTradeshows = () => {
@@ -162,6 +228,17 @@ export default function RepDashboard() {
             </p>
           </CardContent>
         </Card>
+
+        {/* Create Button */}
+        <div className="flex justify-end mb-6">
+          <Button
+            onClick={() => setShowCreateModal(true)}
+            className="bg-[rgb(27,208,118)] hover:bg-[rgb(27,208,118)]/90 text-white"
+          >
+            <Plus className="h-4 w-4 mr-2" />
+            Create New Tradeshow
+          </Button>
+        </div>
 
         {/* Sort and Filter Controls */}
         {tradeshows.length > 0 && (
@@ -337,6 +414,155 @@ export default function RepDashboard() {
           </CardContent>
         </Card>
       </div>
+
+      {/* Create Modal */}
+      {showCreateModal && (
+        <div className="fixed inset-0 bg-black/70 backdrop-blur-sm flex items-center justify-center z-50 p-4">
+          <Card className="w-full max-w-2xl max-h-[90vh] overflow-y-auto bg-white shadow-2xl border-0">
+            <CardHeader className="bg-white border-b pb-4">
+              <div className="flex items-center justify-between">
+                <CardTitle className="text-2xl font-bold text-gray-900">Create New Tradeshow</CardTitle>
+                <Button
+                  variant="ghost"
+                  size="sm"
+                  onClick={() => setShowCreateModal(false)}
+                  className="hover:bg-gray-100"
+                >
+                  <X className="h-5 w-5" />
+                </Button>
+              </div>
+              <CardDescription className="text-gray-600 text-base mt-2">
+                Create a new tradeshow event and get your personalized lead capture link
+              </CardDescription>
+            </CardHeader>
+            <CardContent className="pt-6">
+              <form onSubmit={handleCreateTradeshow} className="space-y-5">
+                <div>
+                  <label className="block text-sm font-semibold text-gray-900 mb-2">Name *</label>
+                  <input
+                    type="text"
+                    value={formData.name}
+                    onChange={(e) => handleSlugGeneration(e.target.value)}
+                    className="w-full px-4 py-2 border-2 border-gray-300 rounded-lg focus:ring-2 focus:ring-[rgb(27,208,118)] focus:border-[rgb(27,208,118)] outline-none text-gray-900"
+                    required
+                  />
+                </div>
+
+                <div>
+                  <label className="block text-sm font-semibold text-gray-900 mb-2">Slug *</label>
+                  <input
+                    type="text"
+                    value={formData.slug}
+                    onChange={(e) => setFormData({ ...formData, slug: e.target.value })}
+                    className="w-full px-4 py-2 border-2 border-gray-300 rounded-lg focus:ring-2 focus:ring-[rgb(27,208,118)] focus:border-[rgb(27,208,118)] outline-none text-gray-900"
+                    required
+                    placeholder="auto-generated-from-name"
+                  />
+                  <p className="text-xs text-gray-500 mt-1">
+                    URL-friendly identifier (auto-generated from name)
+                  </p>
+                </div>
+
+                <div>
+                  <label className="block text-sm font-semibold text-gray-900 mb-2">Description</label>
+                  <textarea
+                    value={formData.description}
+                    onChange={(e) => setFormData({ ...formData, description: e.target.value })}
+                    className="w-full px-4 py-2 border-2 border-gray-300 rounded-lg focus:ring-2 focus:ring-[rgb(27,208,118)] focus:border-[rgb(27,208,118)] outline-none text-gray-900"
+                    rows={3}
+                  />
+                </div>
+
+                <div>
+                  <label className="block text-sm font-semibold text-gray-900 mb-2">Location</label>
+                  <input
+                    type="text"
+                    value={formData.location}
+                    onChange={(e) => setFormData({ ...formData, location: e.target.value })}
+                    className="w-full px-4 py-2 border-2 border-gray-300 rounded-lg focus:ring-2 focus:ring-[rgb(27,208,118)] focus:border-[rgb(27,208,118)] outline-none text-gray-900"
+                  />
+                </div>
+
+                <div className="grid grid-cols-2 gap-4">
+                  <div>
+                    <label className="block text-sm font-semibold text-gray-900 mb-2">Start Date</label>
+                    <input
+                      type="date"
+                      value={formData.startDate}
+                      onChange={(e) => setFormData({ ...formData, startDate: e.target.value })}
+                      className="w-full px-4 py-2 border-2 border-gray-300 rounded-lg focus:ring-2 focus:ring-[rgb(27,208,118)] focus:border-[rgb(27,208,118)] outline-none text-gray-900"
+                    />
+                  </div>
+                  <div>
+                    <label className="block text-sm font-semibold text-gray-900 mb-2">End Date</label>
+                    <input
+                      type="date"
+                      value={formData.endDate}
+                      onChange={(e) => setFormData({ ...formData, endDate: e.target.value })}
+                      className="w-full px-4 py-2 border-2 border-gray-300 rounded-lg focus:ring-2 focus:ring-[rgb(27,208,118)] focus:border-[rgb(27,208,118)] outline-none text-gray-900"
+                    />
+                  </div>
+                </div>
+
+                <div>
+                  <label className="block text-sm font-semibold text-gray-900 mb-2">Default Country</label>
+                  <select
+                    value={formData.defaultCountry}
+                    onChange={(e) => setFormData({ ...formData, defaultCountry: e.target.value })}
+                    className="w-full px-4 py-2 border-2 border-gray-300 rounded-lg focus:ring-2 focus:ring-[rgb(27,208,118)] focus:border-[rgb(27,208,118)] outline-none text-gray-900"
+                  >
+                    <option value="">No default (users must select)</option>
+                    <option value="France">France</option>
+                    <option value="Nordics">Nordics</option>
+                    <option value="United Kingdom">United Kingdom</option>
+                    <option value="Germany">Germany</option>
+                    <option value="Austria">Austria</option>
+                    <option value="Switzerland - German">Switzerland - German</option>
+                    <option value="Switzerland - French">Switzerland - French</option>
+                    <option value="North America">North America</option>
+                    <option value="South America">South America</option>
+                    <option value="APAC">APAC</option>
+                  </select>
+                  <p className="text-xs text-gray-500 mt-1">
+                    If set, this country will be pre-selected in the form for this tradeshow
+                  </p>
+                </div>
+
+                <div className="bg-blue-50 border border-blue-200 rounded-lg p-4">
+                  <p className="text-sm text-blue-900">
+                    <strong>Note:</strong> Your tradeshow will be visible to admins and you'll get a personalized link with your rep code.
+                  </p>
+                </div>
+
+                <div className="flex gap-4 pt-6 border-t">
+                  <Button
+                    type="button"
+                    variant="outline"
+                    onClick={() => setShowCreateModal(false)}
+                    className="flex-1 border-2 hover:bg-gray-50"
+                  >
+                    Cancel
+                  </Button>
+                  <Button
+                    type="submit"
+                    disabled={creating}
+                    className="flex-1 bg-[rgb(27,208,118)] hover:bg-[rgb(27,208,118)]/90 text-white"
+                  >
+                    {creating ? (
+                      <>
+                        <Loader2 className="mr-2 h-4 w-4 animate-spin" />
+                        Creating...
+                      </>
+                    ) : (
+                      "Create Tradeshow"
+                    )}
+                  </Button>
+                </div>
+              </form>
+            </CardContent>
+          </Card>
+        </div>
+      )}
     </div>
   )
 }

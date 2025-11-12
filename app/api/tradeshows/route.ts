@@ -86,12 +86,12 @@ export async function GET(request: NextRequest) {
   }
 }
 
-// POST - Create new tradeshow (admin only)
+// POST - Create new tradeshow (admin and reps)
 export async function POST(request: NextRequest) {
   try {
     const session = await getServerSession(authOptions)
 
-    if (!session || session.user.role !== "admin") {
+    if (!session || (session.user.role !== "admin" && session.user.role !== "rep")) {
       return NextResponse.json({ error: "Unauthorized" }, { status: 401 })
     }
 

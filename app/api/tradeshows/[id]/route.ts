@@ -150,3 +150,49 @@ export async function PATCH(request: NextRequest, { params }: { params: { id: st
     return NextResponse.json({ error: "Internal server error" }, { status: 500 })
   }
 }
+
+// DELETE - Delete tradeshow permanently
+export async function DELETE(request: NextRequest, { params }: { params: { id: string } }) {
+  try {
+    const session = await getServerSession(authOptions)
+
+    if (!session || session.user.role !== "admin") {
+      return NextResponse.json({ error: "Unauthorized" }, { status: 401 })
+    }
+
+    const sql = neon(process.env.DATABASE_URL!)
+    const tradeshowId = parseInt(params.id)
+
+    // Check if tradeshow exists
+    const tradeshow = await sql`
+      SELECT id, name FROM tradeshows WHERE id = ${tradeshowId}
+    `
+
+    if (tradeshow.length === 0) {
+      return NextResponse.json({ error: "Tradeshow not found" }, { status: 404 })
+    }
+
+    // Delete associated data first (due to foreign key constraints)
+    // Delete tradeshow tags
+    await sql`
+      DELETE FROM tradeshow_tags WHERE tradeshow_id = ${tradeshowId}
+    `
+
+    // Delete badge photos/submissions
+    await sql`
+      DELETE FROM badge_photos WHERE tradeshow_id = ${tradeshowId}
+    `
+
+    // Delete the tradeshow
+    await sql`
+      DELETE FROM tradeshows WHERE id = ${tradeshowId}
+    `
+
+    console.log(`Tradeshow "${tradeshow[0].name}" (ID: ${tradeshowId}) permanently deleted by ${session.user.email}`)
+
+    return NextResponse.json({ success: true, message: "Tradeshow permanently deleted" })
+  } catch (error) {
+    console.error("Error deleting tradeshow:", error)
+    return NextResponse.json({ error: "Internal server error" }, { status: 500 })
+  }
+}

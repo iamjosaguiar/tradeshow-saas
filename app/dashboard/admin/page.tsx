@@ -17,6 +17,10 @@ import {
   Eye,
   X,
   Settings,
+  UserCircle,
+  Archive,
+  Trash2,
+  ArchiveRestore,
 } from "lucide-react"
 
 interface Tradeshow {
@@ -43,6 +47,8 @@ export default function AdminDashboard() {
   const [creating, setCreating] = useState(false)
   const [sortBy, setSortBy] = useState<string>("newest")
   const [filterBy, setFilterBy] = useState<string>("all")
+  const [deletingId, setDeletingId] = useState<number | null>(null)
+  const [togglingId, setTogglingId] = useState<number | null>(null)
 
   // Form state
   const [formData, setFormData] = useState({
@@ -134,6 +140,59 @@ export default function AdminDashboard() {
       .replace(/[^a-z0-9]+/g, "-")
       .replace(/^-|-$/g, "")
     setFormData({ ...formData, name, slug })
+  }
+
+  const handleToggleActive = async (tradeshowId: number, e: React.MouseEvent) => {
+    e.stopPropagation()
+    setTogglingId(tradeshowId)
+
+    try {
+      const response = await fetch(`/api/tradeshows/${tradeshowId}/toggle-active`, {
+        method: "POST",
+      })
+
+      if (response.ok) {
+        fetchTradeshows()
+      } else {
+        const error = await response.json()
+        alert(error.error || "Failed to toggle tradeshow status")
+      }
+    } catch (error) {
+      console.error("Error toggling tradeshow:", error)
+      alert("An error occurred")
+    } finally {
+      setTogglingId(null)
+    }
+  }
+
+  const handleDelete = async (tradeshowId: number, tradeshowName: string, e: React.MouseEvent) => {
+    e.stopPropagation()
+
+    const confirmed = window.confirm(
+      `Are you sure you want to permanently delete "${tradeshowName}"?\n\nThis will also delete all associated submissions and badge photos. This action cannot be undone.`
+    )
+
+    if (!confirmed) return
+
+    setDeletingId(tradeshowId)
+
+    try {
+      const response = await fetch(`/api/tradeshows/${tradeshowId}`, {
+        method: "DELETE",
+      })
+
+      if (response.ok) {
+        fetchTradeshows()
+      } else {
+        const error = await response.json()
+        alert(error.error || "Failed to delete tradeshow")
+      }
+    } catch (error) {
+      console.error("Error deleting tradeshow:", error)
+      alert("An error occurred")
+    } finally {
+      setDeletingId(null)
+    }
   }
 
   const getFilteredAndSortedTradeshows = () => {
@@ -358,6 +417,12 @@ export default function AdminDashboard() {
                     <CardDescription className="text-sm">
                       {tradeshow.description || "No description"}
                     </CardDescription>
+                    {tradeshow.created_by_name && (
+                      <div className="flex items-center gap-2 mt-2 text-xs text-gray-500">
+                        <UserCircle className="h-3.5 w-3.5" />
+                        <span>Created by: {tradeshow.created_by_name}</span>
+                      </div>
+                    )}
                   </div>
                   <Badge
                     variant={tradeshow.is_active ? "default" : "secondary"}
@@ -368,35 +433,72 @@ export default function AdminDashboard() {
                 </div>
               </CardHeader>
               <CardContent>
-                <div className="grid grid-cols-2 md:grid-cols-4 gap-4 text-sm">
-                  {tradeshow.location && (
+                <div className="space-y-4">
+                  <div className="grid grid-cols-2 md:grid-cols-3 gap-4 text-sm">
+                    {tradeshow.location && (
+                      <div className="flex items-center gap-2 text-gray-600">
+                        <MapPin className="h-4 w-4" />
+                        <span>{tradeshow.location}</span>
+                      </div>
+                    )}
+                    {tradeshow.start_date && (
+                      <div className="flex items-center gap-2 text-gray-600">
+                        <Calendar className="h-4 w-4" />
+                        <span>{new Date(tradeshow.start_date).toLocaleDateString()}</span>
+                      </div>
+                    )}
                     <div className="flex items-center gap-2 text-gray-600">
-                      <MapPin className="h-4 w-4" />
-                      <span>{tradeshow.location}</span>
+                      <Users className="h-4 w-4" />
+                      <span>{tradeshow.submission_count} submissions</span>
                     </div>
-                  )}
-                  {tradeshow.start_date && (
-                    <div className="flex items-center gap-2 text-gray-600">
-                      <Calendar className="h-4 w-4" />
-                      <span>{new Date(tradeshow.start_date).toLocaleDateString()}</span>
-                    </div>
-                  )}
-                  <div className="flex items-center gap-2 text-gray-600">
-                    <Users className="h-4 w-4" />
-                    <span>{tradeshow.submission_count} submissions</span>
                   </div>
-                  <Button
-                    variant="ghost"
-                    size="sm"
-                    className="flex items-center gap-2"
-                    onClick={(e) => {
-                      e.stopPropagation()
-                      router.push(`/dashboard/admin/tradeshows/${tradeshow.id}`)
-                    }}
-                  >
-                    <Eye className="h-4 w-4" />
-                    View Details
-                  </Button>
+
+                  <div className="flex gap-2 pt-2 border-t">
+                    <Button
+                      variant="outline"
+                      size="sm"
+                      className="flex items-center gap-2"
+                      onClick={(e) => {
+                        e.stopPropagation()
+                        router.push(`/dashboard/admin/tradeshows/${tradeshow.id}`)
+                      }}
+                    >
+                      <Eye className="h-4 w-4" />
+                      View Details
+                    </Button>
+
+                    <Button
+                      variant="outline"
+                      size="sm"
+                      className="flex items-center gap-2"
+                      onClick={(e) => handleToggleActive(tradeshow.id, e)}
+                      disabled={togglingId === tradeshow.id}
+                    >
+                      {togglingId === tradeshow.id ? (
+                        <Loader2 className="h-4 w-4 animate-spin" />
+                      ) : tradeshow.is_active ? (
+                        <Archive className="h-4 w-4" />
+                      ) : (
+                        <ArchiveRestore className="h-4 w-4" />
+                      )}
+                      {tradeshow.is_active ? "Archive" : "Activate"}
+                    </Button>
+
+                    <Button
+                      variant="outline"
+                      size="sm"
+                      className="flex items-center gap-2 text-red-600 hover:text-red-700 hover:bg-red-50 border-red-200"
+                      onClick={(e) => handleDelete(tradeshow.id, tradeshow.name, e)}
+                      disabled={deletingId === tradeshow.id}
+                    >
+                      {deletingId === tradeshow.id ? (
+                        <Loader2 className="h-4 w-4 animate-spin" />
+                      ) : (
+                        <Trash2 className="h-4 w-4" />
+                      )}
+                      Delete
+                    </Button>
+                  </div>
                 </div>
               </CardContent>
             </Card>
