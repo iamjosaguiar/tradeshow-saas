@@ -148,7 +148,7 @@ export default function LoginPage() {
                   Hey you, welcome back
                 </CardTitle>
                 <CardDescription className="text-base text-muted-foreground">
-                  LOGIN TO ACTIVECAMPAIGN
+                  Enter your account name to continue
                 </CardDescription>
               </CardHeader>
 
