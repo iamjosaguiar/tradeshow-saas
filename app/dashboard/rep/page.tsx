@@ -78,12 +78,12 @@ export default function RepDashboard() {
       const response = await fetch("/api/tradeshows")
       if (response.ok) {
         const data = await response.json()
-        // Filter to only active mini events
+        // Filter to only active self managed events
         const activeTradeshows = data.filter((t: Tradeshow) => t.is_active)
         setTradeshows(activeTradeshows)
       }
     } catch (error) {
-      console.error("Error fetching mini events:", error)
+      console.error("Error fetching self managed events:", error)
     } finally {
       setLoading(false)
     }
@@ -231,7 +231,7 @@ export default function RepDashboard() {
           <CardContent className="p-6">
             <h2 className="text-2xl font-bold mb-2">Your Personalized Lead Capture Links</h2>
             <p className="text-white/90">
-              Each mini event below has a unique link with your rep code. Share your link to capture leads and track your submissions!
+              Each self managed event below has a unique link with your rep code. Share your link to capture leads and track your submissions!
             </p>
           </CardContent>
         </Card>
@@ -243,7 +243,7 @@ export default function RepDashboard() {
             className="bg-[rgb(27,208,118)] hover:bg-[rgb(27,208,118)]/90 text-white"
           >
             <Plus className="h-4 w-4 mr-2" />
-            Create New Mini Event
+            Create New Self Managed Event
           </Button>
         </div>
 
@@ -279,27 +279,27 @@ export default function RepDashboard() {
                     onChange={(e) => setFilterBy(e.target.value)}
                     className="px-3 py-2 border border-gray-300 rounded-lg text-sm focus:outline-none focus:ring-2 focus:ring-[rgb(27,208,118)] focus:border-transparent"
                   >
-                    <option value="all">All Mini Events</option>
+                    <option value="all">All Self Managed Events</option>
                     <option value="with-leads">Only With My Leads</option>
                   </select>
                 </div>
 
                 <div className="ml-auto text-sm text-gray-600">
-                  Showing {displayedTradeshows.length} of {tradeshows.length} mini events
+                  Showing {displayedTradeshows.length} of {tradeshows.length} self managed events
                 </div>
               </div>
             </CardContent>
           </Card>
         )}
 
-        {/* Mini Events Grid */}
+        {/* Self Managed Events Grid */}
         {displayedTradeshows.length === 0 && tradeshows.length === 0 ? (
           <Card>
             <CardContent className="p-12 text-center">
               <Calendar className="h-12 w-12 mx-auto mb-4 text-gray-400" />
-              <p className="text-lg font-medium text-gray-900">No Active Mini Events</p>
+              <p className="text-lg font-medium text-gray-900">No Active Self Managed Events</p>
               <p className="text-sm text-gray-500 mt-2">
-                There are currently no mini events assigned to you. Check back later or create your own!
+                There are currently no self managed events assigned to you. Check back later or create your own!
               </p>
             </CardContent>
           </Card>
@@ -307,7 +307,7 @@ export default function RepDashboard() {
           <Card>
             <CardContent className="p-12 text-center">
               <Users className="h-12 w-12 mx-auto mb-4 text-gray-400" />
-              <p className="text-lg font-medium text-gray-900">No Mini Events Match Your Filters</p>
+              <p className="text-lg font-medium text-gray-900">No Self Managed Events Match Your Filters</p>
               <p className="text-sm text-gray-500 mt-2">
                 Try adjusting your sort or filter options
               </p>
@@ -316,7 +316,7 @@ export default function RepDashboard() {
                 variant="outline"
                 className="mt-4"
               >
-                Show All Mini Events
+                Show All Self Managed Events
               </Button>
             </CardContent>
           </Card>
@@ -414,7 +414,7 @@ export default function RepDashboard() {
             <h3 className="font-semibold text-blue-900 mb-2">How to Use Your Links</h3>
             <ul className="text-sm text-blue-800 space-y-1 list-disc list-inside">
               <li>Each link is unique to you and tracks all submissions under your rep code</li>
-              <li>Share your link via email, QR code, or directly at your mini event</li>
+              <li>Share your link via email, QR code, or directly at your self managed event</li>
               <li>All leads captured through your link will be automatically attributed to you</li>
               <li>Contact your admin to view your submission analytics</li>
             </ul>
@@ -433,7 +433,7 @@ export default function RepDashboard() {
                 </div>
                 <CardTitle className="text-2xl font-bold text-gray-900">Success!</CardTitle>
                 <CardDescription className="text-gray-600 text-base mt-2">
-                  Your mini event has been created successfully.
+                  Your self managed event has been created successfully.
                 </CardDescription>
               </div>
             </CardHeader>
@@ -455,7 +455,7 @@ export default function RepDashboard() {
           <Card className="w-full max-w-2xl max-h-[90vh] overflow-y-auto bg-white shadow-2xl border-0">
             <CardHeader className="bg-white border-b pb-4">
               <div className="flex items-center justify-between">
-                <CardTitle className="text-2xl font-bold text-gray-900">Create New Mini Event</CardTitle>
+                <CardTitle className="text-2xl font-bold text-gray-900">Create New Self Managed Event</CardTitle>
                 <Button
                   variant="ghost"
                   size="sm"
@@ -466,8 +466,13 @@ export default function RepDashboard() {
                 </Button>
               </div>
               <CardDescription className="text-gray-600 text-base mt-2">
-                Create a new mini event and get your personalized lead capture link
+                Create a new self managed event and get your personalized lead capture link
               </CardDescription>
+              <div className="bg-blue-50 border border-blue-200 rounded-lg p-4 mt-4">
+                <p className="text-sm text-blue-900">
+                  <strong>Note:</strong> Self managed events are different from tradeshows, which the leadership team is responsible for creating and managing.
+                </p>
+              </div>
             </CardHeader>
             <CardContent className="pt-6">
               <form onSubmit={handleCreateTradeshow} className="space-y-5">
@@ -548,13 +553,13 @@ export default function RepDashboard() {
                     emptyLabel="No default (users must select)"
                   />
                   <p className="text-xs text-gray-500 mt-1">
-                    If set, this country will be pre-selected in the form for this mini event
+                    If set, this country will be pre-selected in the form for this self managed event
                   </p>
                 </div>
 
                 <div className="bg-blue-50 border border-blue-200 rounded-lg p-4">
                   <p className="text-sm text-blue-900">
-                    <strong>Note:</strong> Your mini event will be visible to admins and you'll get a personalized link with your rep code.
+                    <strong>Note:</strong> Your self managed event will be visible to admins and you'll get a personalized link with your rep code.
                   </p>
                 </div>
 
@@ -578,7 +583,7 @@ export default function RepDashboard() {
                         Creating...
                       </>
                     ) : (
-                      "Create Mini Event"
+                      "Create Self Managed Event"
                     )}
                   </Button>
                 </div>

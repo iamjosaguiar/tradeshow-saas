@@ -426,7 +426,7 @@ export default function AdminDashboard() {
                     <option value="inactive">Inactive Only</option>
                     <option value="with-submissions">With Submissions</option>
                     <option value="tradeshows">Tradeshows Only</option>
-                    <option value="mini-events">Mini Events Only</option>
+                    <option value="mini-events">Self Managed Events Only</option>
                   </select>
                 </div>
 
@@ -487,7 +487,7 @@ export default function AdminDashboard() {
                     </Badge>
                     {tradeshow.created_by_role === "rep" && (
                       <Badge variant="outline" className="bg-blue-50 text-blue-700 border-blue-200">
-                        Mini Event
+                        Self Managed Event
                       </Badge>
                     )}
                   </div>
