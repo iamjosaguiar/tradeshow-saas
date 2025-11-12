@@ -66,6 +66,7 @@ export default function AATradeShowRepForm() {
   const [errors, setErrors] = useState<FormErrors>({})
   const [isSubmitting, setIsSubmitting] = useState(false)
   const [showSuccess, setShowSuccess] = useState(false)
+  const [showSuccessDialog, setShowSuccessDialog] = useState(false)
   const [photoPreview, setPhotoPreview] = useState<string | null>(null)
   const [phoneDefaultCountry, setPhoneDefaultCountry] = useState<string>("DE")
 
@@ -150,30 +151,31 @@ export default function AATradeShowRepForm() {
 
       track("Form Submitted", { form: `A+A Tradeshow - ${repName}` })
 
-      setShowSuccess(true)
-      setTimeout(() => {
-        setFormData({
-          email: "",
-          name: "",
-          phone: "",
-          country: "",
-          comments: "",
-          company: "",
-          role: "",
-          workEnvironment: "",
-          numberOfStaff: "",
-          currentRespirator: "",
-          badgePhoto: null,
-        })
-        setPhotoPreview(null)
-        setShowSuccess(false)
-      }, 3000)
+      setShowSuccessDialog(true)
     } catch (error) {
       console.error("Submission error:", error)
       alert("Failed to submit form. Please try again.")
     } finally {
       setIsSubmitting(false)
     }
+  }
+
+  const handleSuccessConfirmation = () => {
+    setShowSuccessDialog(false)
+    setFormData({
+      email: "",
+      name: "",
+      phone: "",
+      country: "",
+      comments: "",
+      company: "",
+      role: "",
+      workEnvironment: "",
+      numberOfStaff: "",
+      currentRespirator: "",
+      badgePhoto: null,
+    })
+    setPhotoPreview(null)
   }
 
   return (

@@ -77,6 +77,7 @@ export default function TradeshowRepLeadForm() {
   const [errors, setErrors] = useState<FormErrors>({})
   const [isSubmitting, setIsSubmitting] = useState(false)
   const [showSuccess, setShowSuccess] = useState(false)
+  const [showSuccessDialog, setShowSuccessDialog] = useState(false)
   const [photoPreview, setPhotoPreview] = useState<string | null>(null)
   const [phoneDefaultCountry, setPhoneDefaultCountry] = useState<string>("DE")
 
@@ -212,31 +213,31 @@ export default function TradeshowRepLeadForm() {
         throw new Error("Form submission failed")
       }
 
-      setShowSuccess(true)
-
-      setTimeout(() => {
-        setFormData({
-          email: "",
-          name: "",
-          phone: "",
-          country: "",
-          comments: "",
-          company: "",
-          role: "",
-          workEnvironment: "",
-          numberOfStaff: "",
-          currentRespirator: "",
-          badgePhoto: null,
-        })
-        setPhotoPreview(null)
-        setShowSuccess(false)
-      }, 3000)
+      setShowSuccessDialog(true)
     } catch (error) {
       console.error("Form submission error:", error)
       alert("There was an error submitting the form. Please try again.")
     } finally {
       setIsSubmitting(false)
     }
+  }
+
+  const handleSuccessConfirmation = () => {
+    setShowSuccessDialog(false)
+    setFormData({
+      email: "",
+      name: "",
+      phone: "",
+      country: tradeshow?.default_country || "",
+      comments: "",
+      company: "",
+      role: "",
+      workEnvironment: "",
+      numberOfStaff: "",
+      currentRespirator: "",
+      badgePhoto: null,
+    })
+    setPhotoPreview(null)
   }
 
   if (loading) {
@@ -292,20 +293,6 @@ export default function TradeshowRepLeadForm() {
       {/* Main Content */}
       <div className="container mx-auto px-4 py-12">
         <div className="max-w-2xl mx-auto">
-          {/* Success Message */}
-          {showSuccess && (
-            <Card className="mb-6 border-2 border-[rgb(27,208,118)] bg-[rgb(27,208,118)]/10 backdrop-blur-sm animate-in fade-in slide-in-from-top-4">
-              <CardContent className="p-6">
-                <div className="flex items-center space-x-4">
-                  <div className="w-12 h-12 rounded-full bg-[rgb(27,208,118)] flex items-center justify-center">
-                    <CheckCircle className="h-6 w-6 text-white" />
-                  </div>
-                  <p className="text-white text-lg font-semibold">Thank you! Your submission has been received successfully.</p>
-                </div>
-              </CardContent>
-            </Card>
-          )}
-
           {/* Form Card */}
           <Card className="border-0 shadow-2xl bg-white/95 backdrop-blur-sm">
             <CardHeader className="text-center pb-6 pt-8">
@@ -584,6 +571,33 @@ export default function TradeshowRepLeadForm() {
           </p>
         </div>
       </div>
+
+      {/* Success Dialog */}
+      {showSuccessDialog && (
+        <div className="fixed inset-0 bg-black/70 backdrop-blur-sm flex items-center justify-center z-50 p-4">
+          <Card className="w-full max-w-md bg-white shadow-2xl border-0">
+            <CardHeader className="bg-white border-b pb-4">
+              <div className="flex flex-col items-center text-center">
+                <div className="w-16 h-16 rounded-full bg-[rgb(27,208,118)] flex items-center justify-center mb-4">
+                  <CheckCircle className="h-8 w-8 text-white" />
+                </div>
+                <CardTitle className="text-2xl font-bold text-gray-900">Thank You!</CardTitle>
+                <CardDescription className="text-gray-600 text-base mt-2">
+                  Your submission has been received successfully.
+                </CardDescription>
+              </div>
+            </CardHeader>
+            <CardContent className="pt-6">
+              <Button
+                onClick={handleSuccessConfirmation}
+                className="w-full bg-[rgb(27,208,118)] hover:bg-[rgb(27,208,118)]/90 text-white py-6 text-lg"
+              >
+                OK
+              </Button>
+            </CardContent>
+          </Card>
+        </div>
+      )}
     </div>
   )
 }

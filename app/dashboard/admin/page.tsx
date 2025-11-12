@@ -36,6 +36,7 @@ interface Tradeshow {
   created_at: string
   submission_count: string
   created_by_name: string
+  created_by_role?: string
   tags: Array<{ tag_name: string; tag_value: string }>
   assignedReps?: Array<{ id: number; name: string; email: string }>
 }
@@ -252,6 +253,10 @@ export default function AdminDashboard() {
       filtered = filtered.filter((t) => !t.is_active)
     } else if (filterBy === "with-submissions") {
       filtered = filtered.filter((t) => parseInt(t.submission_count) > 0)
+    } else if (filterBy === "tradeshows") {
+      filtered = filtered.filter((t) => t.created_by_role !== "rep")
+    } else if (filterBy === "mini-events") {
+      filtered = filtered.filter((t) => t.created_by_role === "rep")
     }
 
     // Apply sort
@@ -416,15 +421,17 @@ export default function AdminDashboard() {
                     onChange={(e) => setFilterBy(e.target.value)}
                     className="px-3 py-2 border border-gray-300 rounded-lg text-sm focus:outline-none focus:ring-2 focus:ring-[rgb(27,208,118)] focus:border-transparent"
                   >
-                    <option value="all">All Tradeshows</option>
+                    <option value="all">All Events</option>
                     <option value="active">Active Only</option>
                     <option value="inactive">Inactive Only</option>
                     <option value="with-submissions">With Submissions</option>
+                    <option value="tradeshows">Tradeshows Only</option>
+                    <option value="mini-events">Mini Events Only</option>
                   </select>
                 </div>
 
                 <div className="ml-auto text-sm text-gray-600">
-                  Showing {displayedTradeshows.length} of {tradeshows.length} tradeshows
+                  Showing {displayedTradeshows.length} of {tradeshows.length} events
                 </div>
               </div>
             </CardContent>
@@ -471,12 +478,19 @@ export default function AdminDashboard() {
                       </div>
                     )}
                   </div>
-                  <Badge
-                    variant={tradeshow.is_active ? "default" : "secondary"}
-                    className={tradeshow.is_active ? "bg-[rgb(27,208,118)]" : ""}
-                  >
-                    {tradeshow.is_active ? "Active" : "Inactive"}
-                  </Badge>
+                  <div className="flex flex-col gap-2 items-end">
+                    <Badge
+                      variant={tradeshow.is_active ? "default" : "secondary"}
+                      className={tradeshow.is_active ? "bg-[rgb(27,208,118)]" : ""}
+                    >
+                      {tradeshow.is_active ? "Active" : "Inactive"}
+                    </Badge>
+                    {tradeshow.created_by_role === "rep" && (
+                      <Badge variant="outline" className="bg-blue-50 text-blue-700 border-blue-200">
+                        Mini Event
+                      </Badge>
+                    )}
+                  </div>
                 </div>
               </CardHeader>
               <CardContent>

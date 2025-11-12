@@ -69,6 +69,7 @@ export default function TradeshowLeadForm() {
   const [errors, setErrors] = useState<FormErrors>({})
   const [isSubmitting, setIsSubmitting] = useState(false)
   const [showSuccess, setShowSuccess] = useState(false)
+  const [showSuccessDialog, setShowSuccessDialog] = useState(false)
   const [photoPreview, setPhotoPreview] = useState<string | null>(null)
   const [phoneDefaultCountry, setPhoneDefaultCountry] = useState<string>("DE")
 
@@ -189,31 +190,31 @@ export default function TradeshowLeadForm() {
         throw new Error("Form submission failed")
       }
 
-      setShowSuccess(true)
-
-      setTimeout(() => {
-        setFormData({
-          email: "",
-          name: "",
-          phone: "",
-          country: "",
-          comments: "",
-          company: "",
-          role: "",
-          workEnvironment: "",
-          numberOfStaff: "",
-          currentRespirator: "",
-          badgePhoto: null,
-        })
-        setPhotoPreview(null)
-        setShowSuccess(false)
-      }, 3000)
+      setShowSuccessDialog(true)
     } catch (error) {
       console.error("Form submission error:", error)
       alert("There was an error submitting the form. Please try again.")
     } finally {
       setIsSubmitting(false)
     }
+  }
+
+  const handleSuccessConfirmation = () => {
+    setShowSuccessDialog(false)
+    setFormData({
+      email: "",
+      name: "",
+      phone: "",
+      country: tradeshow?.default_country || "",
+      comments: "",
+      company: "",
+      role: "",
+      workEnvironment: "",
+      numberOfStaff: "",
+      currentRespirator: "",
+      badgePhoto: null,
+    })
+    setPhotoPreview(null)
   }
 
   if (loading) {
@@ -552,6 +553,33 @@ export default function TradeshowLeadForm() {
           </p>
         </div>
       </div>
+
+      {/* Success Dialog */}
+      {showSuccessDialog && (
+        <div className="fixed inset-0 bg-black/70 backdrop-blur-sm flex items-center justify-center z-50 p-4">
+          <Card className="w-full max-w-md bg-white shadow-2xl border-0">
+            <CardHeader className="bg-white border-b pb-4">
+              <div className="flex flex-col items-center text-center">
+                <div className="w-16 h-16 rounded-full bg-[rgb(27,208,118)] flex items-center justify-center mb-4">
+                  <CheckCircle className="h-8 w-8 text-white" />
+                </div>
+                <CardTitle className="text-2xl font-bold text-gray-900">Thank You!</CardTitle>
+                <CardDescription className="text-gray-600 text-base mt-2">
+                  Your submission has been received successfully.
+                </CardDescription>
+              </div>
+            </CardHeader>
+            <CardContent className="pt-6">
+              <Button
+                onClick={handleSuccessConfirmation}
+                className="w-full bg-[rgb(27,208,118)] hover:bg-[rgb(27,208,118)]/90 text-white py-6 text-lg"
+              >
+                OK
+              </Button>
+            </CardContent>
+          </Card>
+        </div>
+      )}
     </div>
   )
 }

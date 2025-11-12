@@ -44,6 +44,7 @@ export default function RepDashboard() {
   const [filterBy, setFilterBy] = useState<string>("all")
   const [showCreateModal, setShowCreateModal] = useState(false)
   const [creating, setCreating] = useState(false)
+  const [showSuccessDialog, setShowSuccessDialog] = useState(false)
 
   // Form state
   const [formData, setFormData] = useState({
@@ -108,6 +109,21 @@ export default function RepDashboard() {
     setFormData({ ...formData, name, slug })
   }
 
+  const handleSuccessConfirmation = () => {
+    setShowSuccessDialog(false)
+    setShowCreateModal(false)
+    setFormData({
+      name: "",
+      slug: "",
+      description: "",
+      location: "",
+      startDate: "",
+      endDate: "",
+      defaultCountry: "",
+    })
+    fetchTradeshows()
+  }
+
   const handleCreateTradeshow = async (e: React.FormEvent) => {
     e.preventDefault()
     setCreating(true)
@@ -128,17 +144,7 @@ export default function RepDashboard() {
       })
 
       if (response.ok) {
-        setShowCreateModal(false)
-        setFormData({
-          name: "",
-          slug: "",
-          description: "",
-          location: "",
-          startDate: "",
-          endDate: "",
-          defaultCountry: "",
-        })
-        fetchTradeshows()
+        setShowSuccessDialog(true)
       } else {
         const error = await response.json()
         alert(error.error || "Failed to create mini event")
@@ -415,6 +421,33 @@ export default function RepDashboard() {
           </CardContent>
         </Card>
       </div>
+
+      {/* Success Dialog */}
+      {showSuccessDialog && (
+        <div className="fixed inset-0 bg-black/70 backdrop-blur-sm flex items-center justify-center z-50 p-4">
+          <Card className="w-full max-w-md bg-white shadow-2xl border-0">
+            <CardHeader className="bg-white border-b pb-4">
+              <div className="flex flex-col items-center text-center">
+                <div className="w-16 h-16 rounded-full bg-[rgb(27,208,118)] flex items-center justify-center mb-4">
+                  <CheckCircle className="h-8 w-8 text-white" />
+                </div>
+                <CardTitle className="text-2xl font-bold text-gray-900">Success!</CardTitle>
+                <CardDescription className="text-gray-600 text-base mt-2">
+                  Your mini event has been created successfully.
+                </CardDescription>
+              </div>
+            </CardHeader>
+            <CardContent className="pt-6">
+              <Button
+                onClick={handleSuccessConfirmation}
+                className="w-full bg-[rgb(27,208,118)] hover:bg-[rgb(27,208,118)]/90 text-white py-6 text-lg"
+              >
+                OK
+              </Button>
+            </CardContent>
+          </Card>
+        </div>
+      )}
 
       {/* Create Modal */}
       {showCreateModal && (

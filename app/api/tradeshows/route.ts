@@ -111,11 +111,12 @@ export async function GET(request: NextRequest) {
           t.created_at,
           t.updated_at,
           u.name as created_by_name,
+          u.role as created_by_role,
           COUNT(bp.id) as submission_count
         FROM tradeshows t
         LEFT JOIN users u ON t.created_by = u.id
         LEFT JOIN badge_photos bp ON t.id = bp.tradeshow_id
-        GROUP BY t.id, u.name
+        GROUP BY t.id, u.name, u.role
         ORDER BY t.created_at DESC
       `
     }
