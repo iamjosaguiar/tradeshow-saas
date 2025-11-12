@@ -64,6 +64,7 @@ export default function AdminDashboard() {
   const [deleteConfirmation, setDeleteConfirmation] = useState("")
   const [tradeshowToDelete, setTradeshowToDelete] = useState<{ id: number; name: string } | null>(null)
   const [selectedReps, setSelectedReps] = useState<number[]>([])
+  const [repSearchTerm, setRepSearchTerm] = useState("")
 
   // Form state
   const [formData, setFormData] = useState({
@@ -671,28 +672,45 @@ export default function AdminDashboard() {
 
                 <div>
                   <label className="block text-sm font-semibold text-gray-900 mb-2">Assign Sales Managers</label>
+                  {reps.length > 0 && (
+                    <input
+                      type="text"
+                      placeholder="Search by name or email..."
+                      value={repSearchTerm}
+                      onChange={(e) => setRepSearchTerm(e.target.value)}
+                      className="w-full px-3 py-2 mb-2 border-2 border-gray-300 rounded-lg focus:ring-2 focus:ring-[rgb(27,208,118)] focus:border-[rgb(27,208,118)] outline-none text-sm"
+                    />
+                  )}
                   <div className="border-2 border-gray-300 rounded-lg p-3 max-h-48 overflow-y-auto bg-white">
                     {reps.length === 0 ? (
                       <p className="text-sm text-gray-500">No sales managers available</p>
                     ) : (
                       <div className="space-y-2">
-                        {reps.map((rep) => (
-                          <label
-                            key={rep.id}
-                            className="flex items-center gap-3 p-2 hover:bg-gray-50 rounded cursor-pointer"
-                          >
-                            <input
-                              type="checkbox"
-                              checked={selectedReps.includes(rep.id)}
-                              onChange={() => toggleRepSelection(rep.id)}
-                              className="w-4 h-4 text-[rgb(27,208,118)] border-gray-300 rounded focus:ring-[rgb(27,208,118)]"
-                            />
-                            <div className="flex-1">
-                              <div className="text-sm font-medium text-gray-900">{rep.name}</div>
-                              <div className="text-xs text-gray-500">{rep.email}</div>
-                            </div>
-                          </label>
-                        ))}
+                        {reps
+                          .filter((rep) => {
+                            const searchLower = repSearchTerm.toLowerCase()
+                            return (
+                              rep.name.toLowerCase().includes(searchLower) ||
+                              rep.email.toLowerCase().includes(searchLower)
+                            )
+                          })
+                          .map((rep) => (
+                            <label
+                              key={rep.id}
+                              className="flex items-center gap-3 p-2 hover:bg-gray-50 rounded cursor-pointer"
+                            >
+                              <input
+                                type="checkbox"
+                                checked={selectedReps.includes(rep.id)}
+                                onChange={() => toggleRepSelection(rep.id)}
+                                className="w-4 h-4 text-[rgb(27,208,118)] border-gray-300 rounded focus:ring-[rgb(27,208,118)]"
+                              />
+                              <div className="flex-1">
+                                <div className="text-sm font-medium text-gray-900">{rep.name}</div>
+                                <div className="text-xs text-gray-500">{rep.email}</div>
+                              </div>
+                            </label>
+                          ))}
                       </div>
                     )}
                   </div>
