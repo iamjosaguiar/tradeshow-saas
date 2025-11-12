@@ -40,6 +40,14 @@ interface Tradeshow {
     rep_name: string
     rep_code: string
   }>
+  assignedReps?: Array<{ id: number; name: string; email: string }>
+}
+
+interface Rep {
+  id: number
+  name: string
+  email: string
+  rep_code: string
 }
 
 export default function TradeshowDetailPage() {
@@ -47,6 +55,7 @@ export default function TradeshowDetailPage() {
   const router = useRouter()
   const params = useParams()
   const [tradeshow, setTradeshow] = useState<Tradeshow | null>(null)
+  const [reps, setReps] = useState<Rep[]>([])
   const [loading, setLoading] = useState(true)
   const [copied, setCopied] = useState(false)
   const [showEditModal, setShowEditModal] = useState(false)
@@ -59,6 +68,7 @@ export default function TradeshowDetailPage() {
     isActive: true,
     activeCampaignTagName: "",
   })
+  const [selectedReps, setSelectedReps] = useState<number[]>([])
   const [isSubmitting, setIsSubmitting] = useState(false)
   const [loadingTagName, setLoadingTagName] = useState(false)
 
@@ -76,6 +86,7 @@ export default function TradeshowDetailPage() {
     }
 
     fetchTradeshowDetails()
+    fetchReps()
   }, [session, status, router, params.id])
 
   const fetchTradeshowDetails = async () => {
@@ -89,6 +100,20 @@ export default function TradeshowDetailPage() {
       console.error("Error fetching tradeshow:", error)
     } finally {
       setLoading(false)
+    }
+  }
+
+  const fetchReps = async () => {
+    try {
+      const response = await fetch("/api/reps")
+      if (response.ok) {
+        const data = await response.json()
+        // Filter to only include reps (not admins)
+        const repsOnly = data.filter((user: Rep & { role: string }) => user.role === "rep")
+        setReps(repsOnly)
+      }
+    } catch (error) {
+      console.error("Error fetching reps:", error)
     }
   }
 
@@ -115,7 +140,17 @@ export default function TradeshowDetailPage() {
       isActive: tradeshow.is_active,
       activeCampaignTagName: defaultTagName,
     })
+
+    // Set selected reps from assigned reps
+    setSelectedReps(tradeshow.assignedReps?.map((rep) => rep.id) || [])
+
     setShowEditModal(true)
+  }
+
+  const toggleRepSelection = (repId: number) => {
+    setSelectedReps((prev) =>
+      prev.includes(repId) ? prev.filter((id) => id !== repId) : [...prev, repId]
+    )
   }
 
   const handleEditSubmit = async (e: React.FormEvent) => {
@@ -134,6 +169,7 @@ export default function TradeshowDetailPage() {
           endDate: editFormData.endDate || null,
           isActive: editFormData.isActive,
           activeCampaignTagName: editFormData.activeCampaignTagName || null,
+          assignedReps: selectedReps,
         }),
       })
 
@@ -310,6 +346,28 @@ export default function TradeshowDetailPage() {
                 </div>
               </div>
             )}
+
+            {/* Assigned Sales Managers */}
+            <div className="border-t pt-6 mt-6">
+              <h3 className="font-semibold text-gray-900 mb-3">Assigned Sales Managers</h3>
+              {tradeshow.assignedReps && tradeshow.assignedReps.length > 0 ? (
+                <div className="grid grid-cols-1 md:grid-cols-2 gap-3">
+                  {tradeshow.assignedReps.map((rep) => (
+                    <div key={rep.id} className="flex items-center gap-3 p-3 bg-gray-50 rounded-lg border border-gray-200">
+                      <div className="h-10 w-10 bg-[rgb(27,208,118)] rounded-full flex items-center justify-center text-white font-semibold">
+                        {rep.name.charAt(0)}
+                      </div>
+                      <div className="flex-1">
+                        <div className="text-sm font-medium text-gray-900">{rep.name}</div>
+                        <div className="text-xs text-gray-500">{rep.email}</div>
+                      </div>
+                    </div>
+                  ))}
+                </div>
+              ) : (
+                <p className="text-sm text-gray-500">No sales managers assigned to this tradeshow</p>
+              )}
+            </div>
           </CardContent>
         </Card>
 
@@ -471,6 +529,38 @@ export default function TradeshowDetailPage() {
                   />
                   <p className="text-xs text-gray-500 mt-1">
                     Editing this will create a new tag in ActiveCampaign and apply it to future submissions
+                  </p>
+                </div>
+
+                <div>
+                  <label className="block text-sm font-semibold text-gray-900 mb-2">Assign Sales Managers</label>
+                  <div className="border-2 border-gray-300 rounded-lg p-3 max-h-48 overflow-y-auto bg-white">
+                    {reps.length === 0 ? (
+                      <p className="text-sm text-gray-500">No sales managers available</p>
+                    ) : (
+                      <div className="space-y-2">
+                        {reps.map((rep) => (
+                          <label
+                            key={rep.id}
+                            className="flex items-center gap-3 p-2 hover:bg-gray-50 rounded cursor-pointer"
+                          >
+                            <input
+                              type="checkbox"
+                              checked={selectedReps.includes(rep.id)}
+                              onChange={() => toggleRepSelection(rep.id)}
+                              className="w-4 h-4 text-[rgb(27,208,118)] border-gray-300 rounded focus:ring-[rgb(27,208,118)]"
+                            />
+                            <div className="flex-1">
+                              <div className="text-sm font-medium text-gray-900">{rep.name}</div>
+                              <div className="text-xs text-gray-500">{rep.email}</div>
+                            </div>
+                          </label>
+                        ))}
+                      </div>
+                    )}
+                  </div>
+                  <p className="text-xs text-gray-500 mt-1">
+                    Select which sales managers can access this tradeshow. {selectedReps.length} manager{selectedReps.length !== 1 ? "s" : ""} selected.
                   </p>
                 </div>
 

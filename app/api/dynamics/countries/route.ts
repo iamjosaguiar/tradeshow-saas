@@ -45,9 +45,9 @@ export async function GET() {
     const tokenData = await tokenResponse.json()
     const accessToken = tokenData.access_token
 
-    // Fetch address1_country picklist metadata from Lead entity
-    const metadataResponse = await fetch(
-      `${D365_INSTANCE_URL}/api/data/v9.2/EntityDefinitions(LogicalName='lead')/Attributes(LogicalName='address1_country')/Microsoft.Dynamics.CRM.PicklistAttributeMetadata?$select=LogicalName&$expand=OptionSet($select=Options),GlobalOptionSet($select=Options)`,
+    // Fetch distinct country values from existing leads
+    const leadsResponse = await fetch(
+      `${D365_INSTANCE_URL}/api/data/v9.2/leads?$select=address1_country&$filter=address1_country ne null&$orderby=address1_country asc`,
       {
         method: "GET",
         headers: {
@@ -55,32 +55,37 @@ export async function GET() {
           Accept: "application/json",
           "OData-MaxVersion": "4.0",
           "OData-Version": "4.0",
+          Prefer: "odata.maxpagesize=500",
         },
       }
     )
 
-    if (!metadataResponse.ok) {
-      const error = await metadataResponse.text()
-      console.error("Failed to fetch D365 country metadata:", error)
+    if (!leadsResponse.ok) {
+      const error = await leadsResponse.text()
+      console.error("Failed to fetch D365 leads for countries:", error)
       return NextResponse.json(
         { error: "Failed to fetch country options from Dynamics 365" },
         { status: 502 }
       )
     }
 
-    const metadataData = await metadataResponse.json()
+    const leadsData = await leadsResponse.json()
 
-    // Extract options from either OptionSet or GlobalOptionSet
-    const options = metadataData.OptionSet?.Options || metadataData.GlobalOptionSet?.Options || []
+    // Extract unique country values
+    const uniqueCountries = new Set<string>()
+    leadsData.value.forEach((lead: any) => {
+      if (lead.address1_country && lead.address1_country.trim()) {
+        uniqueCountries.add(lead.address1_country.trim())
+      }
+    })
 
-    // Transform options to simple array of country objects with label and value
-    const countries = options
-      .map((option: any) => ({
-        label: option.Label?.UserLocalizedLabel?.Label || "",
-        value: option.Value,
+    // Transform to array and sort
+    const countries = Array.from(uniqueCountries)
+      .map((country, index) => ({
+        label: country,
+        value: index,
       }))
-      .filter((country: any) => country.label) // Filter out any empty labels
-      .sort((a: any, b: any) => a.label.localeCompare(b.label)) // Sort alphabetically
+      .sort((a, b) => a.label.localeCompare(b.label))
 
     return NextResponse.json(countries)
   } catch (error) {
