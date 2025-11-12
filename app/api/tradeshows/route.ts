@@ -20,20 +20,29 @@ export async function GET(request: NextRequest) {
     // For admins, show total submission counts
     let tradeshows
     if (session.user.role === "rep") {
-      // Check if this rep has any assignments (with error handling for new table)
-      let hasAssignments = false
+      // Check if ANY assignments exist in the system (with error handling for new table)
+      let assignmentsExist = false
+      let hasOwnAssignments = false
+
       try {
-        const assignmentCheck = await sql`
+        // Check if the assignment system is being used at all
+        const totalAssignments = await sql`
+          SELECT COUNT(*) as count FROM tradeshow_rep_assignments
+        `
+        assignmentsExist = parseInt(totalAssignments[0].count) > 0
+
+        // Check if this specific rep has assignments
+        const myAssignments = await sql`
           SELECT COUNT(*) as count FROM tradeshow_rep_assignments
           WHERE user_id = ${session.user.id}
         `
-        hasAssignments = parseInt(assignmentCheck[0].count) > 0
+        hasOwnAssignments = parseInt(myAssignments[0].count) > 0
       } catch (error) {
         console.log('tradeshow_rep_assignments table not found, showing all active tradeshows')
-        hasAssignments = false
+        assignmentsExist = false
       }
 
-      if (hasAssignments) {
+      if (assignmentsExist && hasOwnAssignments) {
         // Rep has assignments - show only assigned tradeshows
         tradeshows = await sql`
           SELECT
@@ -58,8 +67,11 @@ export async function GET(request: NextRequest) {
           GROUP BY t.id, u.name
           ORDER BY t.created_at DESC
         `
+      } else if (assignmentsExist && !hasOwnAssignments) {
+        // Assignment system is in use, but this rep has no assignments - show nothing
+        tradeshows = []
       } else {
-        // Rep has no assignments - show all active tradeshows (backward compatibility)
+        // No assignments exist in the system - show all active tradeshows (backward compatibility)
         tradeshows = await sql`
           SELECT
             t.id,
