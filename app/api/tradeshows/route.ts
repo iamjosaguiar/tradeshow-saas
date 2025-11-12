@@ -20,30 +20,62 @@ export async function GET(request: NextRequest) {
     // For admins, show total submission counts
     let tradeshows
     if (session.user.role === "rep") {
-      // Get tradeshows assigned to this rep with their own submission count
-      tradeshows = await sql`
-        SELECT
-          t.id,
-          t.name,
-          t.slug,
-          t.description,
-          t.location,
-          t.start_date,
-          t.end_date,
-          t.default_country,
-          t.is_active,
-          t.created_at,
-          t.updated_at,
-          u.name as created_by_name,
-          COUNT(bp.id) FILTER (WHERE bp.submitted_by_rep = ${session.user.id}) as submission_count
-        FROM tradeshows t
-        LEFT JOIN users u ON t.created_by = u.id
-        LEFT JOIN badge_photos bp ON t.id = bp.tradeshow_id
-        INNER JOIN tradeshow_rep_assignments tra ON t.id = tra.tradeshow_id
-        WHERE tra.user_id = ${session.user.id}
-        GROUP BY t.id, u.name
-        ORDER BY t.created_at DESC
+      // Check if this rep has any assignments
+      const hasAssignments = await sql`
+        SELECT COUNT(*) as count FROM tradeshow_rep_assignments
+        WHERE user_id = ${session.user.id}
       `
+
+      if (hasAssignments[0].count > 0) {
+        // Rep has assignments - show only assigned tradeshows
+        tradeshows = await sql`
+          SELECT
+            t.id,
+            t.name,
+            t.slug,
+            t.description,
+            t.location,
+            t.start_date,
+            t.end_date,
+            t.default_country,
+            t.is_active,
+            t.created_at,
+            t.updated_at,
+            u.name as created_by_name,
+            COUNT(bp.id) FILTER (WHERE bp.submitted_by_rep = ${session.user.id}) as submission_count
+          FROM tradeshows t
+          LEFT JOIN users u ON t.created_by = u.id
+          LEFT JOIN badge_photos bp ON t.id = bp.tradeshow_id
+          INNER JOIN tradeshow_rep_assignments tra ON t.id = tra.tradeshow_id
+          WHERE tra.user_id = ${session.user.id}
+          GROUP BY t.id, u.name
+          ORDER BY t.created_at DESC
+        `
+      } else {
+        // Rep has no assignments - show all active tradeshows (backward compatibility)
+        tradeshows = await sql`
+          SELECT
+            t.id,
+            t.name,
+            t.slug,
+            t.description,
+            t.location,
+            t.start_date,
+            t.end_date,
+            t.default_country,
+            t.is_active,
+            t.created_at,
+            t.updated_at,
+            u.name as created_by_name,
+            COUNT(bp.id) FILTER (WHERE bp.submitted_by_rep = ${session.user.id}) as submission_count
+          FROM tradeshows t
+          LEFT JOIN users u ON t.created_by = u.id
+          LEFT JOIN badge_photos bp ON t.id = bp.tradeshow_id
+          WHERE t.is_active = true
+          GROUP BY t.id, u.name
+          ORDER BY t.created_at DESC
+        `
+      }
     } else {
       // Get all tradeshows with total entry counts (admin view)
       tradeshows = await sql`
