@@ -131,10 +131,9 @@ export async function GET(request: NextRequest) {
     let assignments = []
     try {
       assignments = await sql`
-        SELECT tra.tradeshow_id, u.id, u.name, u.email
+        SELECT tra.tradeshow_id, u.id, u.name, u.email, u.role
         FROM tradeshow_rep_assignments tra
         INNER JOIN users u ON tra.user_id = u.id
-        WHERE u.role = 'rep'
         ORDER BY u.name
       `
     } catch (error) {

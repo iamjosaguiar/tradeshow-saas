@@ -113,9 +113,8 @@ export default function AdminDashboard() {
       const response = await fetch("/api/reps")
       if (response.ok) {
         const data = await response.json()
-        // Filter to only include reps (not admins)
-        const repsOnly = data.filter((user: Rep & { role: string }) => user.role === "rep")
-        setReps(repsOnly)
+        // Include both admins and reps for assignment
+        setReps(data)
       }
     } catch (error) {
       console.error("Error fetching reps:", error)
@@ -671,7 +670,7 @@ export default function AdminDashboard() {
                 </div>
 
                 <div>
-                  <label className="block text-sm font-semibold text-gray-900 mb-2">Assign Sales Managers</label>
+                  <label className="block text-sm font-semibold text-gray-900 mb-2">Assign Team Members</label>
                   {reps.length > 0 && (
                     <input
                       type="text"
@@ -683,7 +682,7 @@ export default function AdminDashboard() {
                   )}
                   <div className="border-2 border-gray-300 rounded-lg p-3 max-h-48 overflow-y-auto bg-white">
                     {reps.length === 0 ? (
-                      <p className="text-sm text-gray-500">No sales managers available</p>
+                      <p className="text-sm text-gray-500">No team members available</p>
                     ) : (
                       <div className="space-y-2">
                         {reps
@@ -715,7 +714,7 @@ export default function AdminDashboard() {
                     )}
                   </div>
                   <p className="text-xs text-gray-500 mt-1">
-                    Select which sales managers can access this tradeshow. {selectedReps.length} manager{selectedReps.length !== 1 ? "s" : ""} selected.
+                    Select which team members can access this tradeshow. {selectedReps.length} selected.
                   </p>
                 </div>
 

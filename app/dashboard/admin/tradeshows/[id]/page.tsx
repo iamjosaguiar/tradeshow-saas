@@ -42,7 +42,7 @@ interface Tradeshow {
     rep_name: string
     rep_code: string
   }>
-  assignedReps?: Array<{ id: number; name: string; email: string; rep_code: string }>
+  assignedReps?: Array<{ id: number; name: string; email: string; rep_code: string; role: string }>
 }
 
 interface Rep {
@@ -113,9 +113,8 @@ export default function TradeshowDetailPage() {
       const response = await fetch("/api/reps")
       if (response.ok) {
         const data = await response.json()
-        // Filter to only include reps (not admins)
-        const repsOnly = data.filter((user: Rep & { role: string }) => user.role === "rep")
-        setReps(repsOnly)
+        // Include both admins and reps for assignment
+        setReps(data)
       }
     } catch (error) {
       console.error("Error fetching reps:", error)
@@ -351,46 +350,54 @@ export default function TradeshowDetailPage() {
               </p>
             </div>
 
-            {/* Admin Personal URL */}
-            {session?.user.repCode && (
-              <div className="border-t pt-6 mt-6">
-                <h3 className="font-semibold text-gray-900 mb-3">Your Personal URL</h3>
-                <div className="flex gap-2">
-                  <input
-                    type="text"
-                    value={`${window.location.origin}/trade-show-lead/${tradeshow.slug}/${session.user.repCode}`}
-                    readOnly
-                    className="flex-1 px-4 py-2 border rounded-lg bg-gray-50 text-sm"
-                  />
-                  <Button
-                    variant="outline"
-                    onClick={() => copyFormUrl(`${window.location.origin}/trade-show-lead/${tradeshow.slug}/${session.user.repCode}`)}
-                  >
-                    {copied && copiedUrl === `${window.location.origin}/trade-show-lead/${tradeshow.slug}/${session.user.repCode}` ? (
-                      <>
-                        <CheckCircle className="h-4 w-4 mr-2" />
-                        Copied!
-                      </>
-                    ) : (
-                      <>
-                        <Copy className="h-4 w-4 mr-2" />
-                        Copy
-                      </>
-                    )}
-                  </Button>
-                  <Button
-                    onClick={() => window.open(`${window.location.origin}/trade-show-lead/${tradeshow.slug}/${session.user.repCode}`, "_blank")}
-                    className="bg-[rgb(27,208,118)] hover:bg-[rgb(27,208,118)]/90"
-                  >
-                    <ExternalLink className="h-4 w-4 mr-2" />
-                    Open Form
-                  </Button>
+            {/* Personal URL */}
+            <div className="border-t pt-6 mt-6">
+              <h3 className="font-semibold text-gray-900 mb-3">Your Personal URL</h3>
+              {session?.user.repCode ? (
+                <>
+                  <div className="flex gap-2">
+                    <input
+                      type="text"
+                      value={`${window.location.origin}/trade-show-lead/${tradeshow.slug}/${session.user.repCode}`}
+                      readOnly
+                      className="flex-1 px-4 py-2 border rounded-lg bg-gray-50 text-sm"
+                    />
+                    <Button
+                      variant="outline"
+                      onClick={() => copyFormUrl(`${window.location.origin}/trade-show-lead/${tradeshow.slug}/${session.user.repCode}`)}
+                    >
+                      {copied && copiedUrl === `${window.location.origin}/trade-show-lead/${tradeshow.slug}/${session.user.repCode}` ? (
+                        <>
+                          <CheckCircle className="h-4 w-4 mr-2" />
+                          Copied!
+                        </>
+                      ) : (
+                        <>
+                          <Copy className="h-4 w-4 mr-2" />
+                          Copy
+                        </>
+                      )}
+                    </Button>
+                    <Button
+                      onClick={() => window.open(`${window.location.origin}/trade-show-lead/${tradeshow.slug}/${session.user.repCode}`, "_blank")}
+                      className="bg-[rgb(27,208,118)] hover:bg-[rgb(27,208,118)]/90"
+                    >
+                      <ExternalLink className="h-4 w-4 mr-2" />
+                      Open Form
+                    </Button>
+                  </div>
+                  <p className="text-xs text-gray-500 mt-2">
+                    Leads submitted through this URL will be attributed to you
+                  </p>
+                </>
+              ) : (
+                <div className="bg-amber-50 border border-amber-200 rounded-lg p-4">
+                  <p className="text-sm text-amber-900">
+                    You need a rep code to have a personal URL. Contact your administrator to set one up for your account.
+                  </p>
                 </div>
-                <p className="text-xs text-gray-500 mt-2">
-                  Leads submitted through this URL will be attributed to you
-                </p>
-              </div>
-            )}
+              )}
+            </div>
 
             {/* Tags */}
             {tradeshow.tags && tradeshow.tags.length > 0 && (
@@ -407,13 +414,13 @@ export default function TradeshowDetailPage() {
               </div>
             )}
 
-            {/* Assigned Sales Managers */}
+            {/* Assigned Team Members */}
             <div className="border-t pt-6 mt-6">
-              <h3 className="font-semibold text-gray-900 mb-3">Assigned Sales Managers</h3>
+              <h3 className="font-semibold text-gray-900 mb-3">Assigned Team Members</h3>
               {tradeshow.assignedReps && tradeshow.assignedReps.length > 0 ? (
                 <div className="space-y-4">
                   {tradeshow.assignedReps.map((rep) => {
-                    const repUrl = `${window.location.origin}/trade-show-lead/${tradeshow.slug}/${rep.rep_code}`
+                    const repUrl = rep.rep_code ? `${window.location.origin}/trade-show-lead/${tradeshow.slug}/${rep.rep_code}` : null
                     return (
                       <div key={rep.id} className="border border-gray-200 rounded-lg p-4 bg-gray-50">
                         <div className="flex items-center gap-3 mb-3">
@@ -423,47 +430,56 @@ export default function TradeshowDetailPage() {
                           <div className="flex-1">
                             <div className="text-sm font-medium text-gray-900">{rep.name}</div>
                             <div className="text-xs text-gray-500">{rep.email}</div>
+                            {rep.role === 'admin' && (
+                              <Badge variant="outline" className="mt-1 text-xs">Admin</Badge>
+                            )}
                           </div>
                         </div>
-                        <div className="flex gap-2">
-                          <input
-                            type="text"
-                            value={repUrl}
-                            readOnly
-                            className="flex-1 px-3 py-2 border rounded-lg bg-white text-xs"
-                          />
-                          <Button
-                            variant="outline"
-                            size="sm"
-                            onClick={() => copyFormUrl(repUrl)}
-                          >
-                            {copied && copiedUrl === repUrl ? (
-                              <>
-                                <CheckCircle className="h-3 w-3 mr-1" />
-                                Copied
-                              </>
-                            ) : (
-                              <>
-                                <Copy className="h-3 w-3 mr-1" />
-                                Copy
-                              </>
-                            )}
-                          </Button>
-                          <Button
-                            size="sm"
-                            onClick={() => window.open(repUrl, "_blank")}
-                            className="bg-[rgb(27,208,118)] hover:bg-[rgb(27,208,118)]/90"
-                          >
-                            <ExternalLink className="h-3 w-3 mr-1" />
-                            Open
-                          </Button>
-                        </div>
+                        {repUrl ? (
+                          <div className="flex gap-2">
+                            <input
+                              type="text"
+                              value={repUrl}
+                              readOnly
+                              className="flex-1 px-3 py-2 border rounded-lg bg-white text-xs"
+                            />
+                            <Button
+                              variant="outline"
+                              size="sm"
+                              onClick={() => copyFormUrl(repUrl)}
+                            >
+                              {copied && copiedUrl === repUrl ? (
+                                <>
+                                  <CheckCircle className="h-3 w-3 mr-1" />
+                                  Copied
+                                </>
+                              ) : (
+                                <>
+                                  <Copy className="h-3 w-3 mr-1" />
+                                  Copy
+                                </>
+                              )}
+                            </Button>
+                            <Button
+                              size="sm"
+                              onClick={() => window.open(repUrl, "_blank")}
+                              className="bg-[rgb(27,208,118)] hover:bg-[rgb(27,208,118)]/90"
+                            >
+                              <ExternalLink className="h-3 w-3 mr-1" />
+                              Open
+                            </Button>
+                          </div>
+                        ) : (
+                          <p className="text-xs text-amber-600 bg-amber-50 border border-amber-200 rounded p-2">
+                            No rep code set - personal URL unavailable
+                          </p>
+                        )}
                       </div>
                     )
                   })}
                 </div>
               ) : (
-                <p className="text-sm text-gray-500">No sales managers assigned to this tradeshow</p>
+                <p className="text-sm text-gray-500">No team members assigned to this tradeshow</p>
               )}
             </div>
           </CardContent>
@@ -635,7 +651,7 @@ export default function TradeshowDetailPage() {
                 </div>
 
                 <div>
-                  <label className="block text-sm font-semibold text-gray-900 mb-2">Assign Sales Managers</label>
+                  <label className="block text-sm font-semibold text-gray-900 mb-2">Assign Team Members</label>
                   {reps.length > 0 && (
                     <input
                       type="text"
@@ -679,7 +695,7 @@ export default function TradeshowDetailPage() {
                     )}
                   </div>
                   <p className="text-xs text-gray-500 mt-1">
-                    Select which sales managers can access this tradeshow. {selectedReps.length} manager{selectedReps.length !== 1 ? "s" : ""} selected.
+                    Select which team members can access this tradeshow. {selectedReps.length} selected.
                   </p>
                 </div>
 

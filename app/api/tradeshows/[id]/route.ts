@@ -60,10 +60,10 @@ export async function GET(request: NextRequest, { params }: { params: { id: stri
     let assignedReps = []
     try {
       assignedReps = await sql`
-        SELECT u.id, u.name, u.email, u.rep_code
+        SELECT u.id, u.name, u.email, u.rep_code, u.role
         FROM tradeshow_rep_assignments tra
         INNER JOIN users u ON tra.user_id = u.id
-        WHERE tra.tradeshow_id = ${tradeshowId} AND u.role = 'rep'
+        WHERE tra.tradeshow_id = ${tradeshowId}
         ORDER BY u.name
       `
     } catch (error) {
