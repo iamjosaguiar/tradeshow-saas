@@ -487,12 +487,16 @@ export default function AdminDashboard() {
                     <button
                       onClick={(e) => handleToggleActive(tradeshow.id, e)}
                       disabled={togglingId === tradeshow.id}
-                      className={`relative inline-flex h-6 w-11 items-center rounded-full transition-colors focus:outline-none focus:ring-2 focus:ring-[rgb(27,208,118)] focus:ring-offset-2 ${
+                      className={`relative inline-flex h-6 w-11 items-center rounded-full transition-colors focus:outline-none focus:ring-2 ${
+                        tradeshow.is_active
+                          ? "focus:ring-[rgb(27,208,118)]"
+                          : "focus:ring-red-500"
+                      } focus:ring-offset-2 ${
                         togglingId === tradeshow.id
                           ? "cursor-not-allowed opacity-50"
                           : "cursor-pointer"
                       } ${
-                        tradeshow.is_active ? "bg-[rgb(27,208,118)]" : "bg-gray-300"
+                        tradeshow.is_active ? "bg-[rgb(27,208,118)]" : "bg-red-500"
                       }`}
                       title={tradeshow.is_active ? "Click to archive" : "Click to activate"}
                     >
