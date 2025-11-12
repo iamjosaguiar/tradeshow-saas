@@ -49,6 +49,9 @@ export default function AdminDashboard() {
   const [filterBy, setFilterBy] = useState<string>("active")
   const [deletingId, setDeletingId] = useState<number | null>(null)
   const [togglingId, setTogglingId] = useState<number | null>(null)
+  const [showDeleteModal, setShowDeleteModal] = useState(false)
+  const [deleteConfirmation, setDeleteConfirmation] = useState("")
+  const [tradeshowToDelete, setTradeshowToDelete] = useState<{ id: number; name: string } | null>(null)
 
   // Form state
   const [formData, setFormData] = useState({
@@ -165,23 +168,27 @@ export default function AdminDashboard() {
     }
   }
 
-  const handleDelete = async (tradeshowId: number, tradeshowName: string, e: React.MouseEvent) => {
+  const handleDeleteClick = (tradeshowId: number, tradeshowName: string, e: React.MouseEvent) => {
     e.stopPropagation()
+    setTradeshowToDelete({ id: tradeshowId, name: tradeshowName })
+    setShowDeleteModal(true)
+    setDeleteConfirmation("")
+  }
 
-    const confirmed = window.confirm(
-      `Are you sure you want to permanently delete "${tradeshowName}"?\n\nThis will also delete all associated submissions and badge photos. This action cannot be undone.`
-    )
+  const handleDeleteConfirm = async () => {
+    if (!tradeshowToDelete) return
 
-    if (!confirmed) return
-
-    setDeletingId(tradeshowId)
+    setDeletingId(tradeshowToDelete.id)
 
     try {
-      const response = await fetch(`/api/tradeshows/${tradeshowId}`, {
+      const response = await fetch(`/api/tradeshows/${tradeshowToDelete.id}`, {
         method: "DELETE",
       })
 
       if (response.ok) {
+        setShowDeleteModal(false)
+        setTradeshowToDelete(null)
+        setDeleteConfirmation("")
         fetchTradeshows()
       } else {
         const error = await response.json()
@@ -193,6 +200,12 @@ export default function AdminDashboard() {
     } finally {
       setDeletingId(null)
     }
+  }
+
+  const handleDeleteCancel = () => {
+    setShowDeleteModal(false)
+    setTradeshowToDelete(null)
+    setDeleteConfirmation("")
   }
 
   const getFilteredAndSortedTradeshows = () => {
@@ -472,7 +485,7 @@ export default function AdminDashboard() {
                         variant="outline"
                         size="sm"
                         className="flex items-center gap-2 text-red-600 hover:text-red-700 hover:bg-red-50 border-red-200"
-                        onClick={(e) => handleDelete(tradeshow.id, tradeshow.name, e)}
+                        onClick={(e) => handleDeleteClick(tradeshow.id, tradeshow.name, e)}
                         disabled={deletingId === tradeshow.id}
                       >
                         {deletingId === tradeshow.id ? (
@@ -659,6 +672,84 @@ export default function AdminDashboard() {
                   </Button>
                 </div>
               </form>
+            </CardContent>
+          </Card>
+        </div>
+      )}
+
+      {/* Delete Confirmation Modal */}
+      {showDeleteModal && tradeshowToDelete && (
+        <div className="fixed inset-0 bg-black/70 backdrop-blur-sm flex items-center justify-center z-50 p-4">
+          <Card className="w-full max-w-md bg-white shadow-2xl border-0">
+            <CardHeader className="bg-white border-b pb-4">
+              <div className="flex items-center justify-between">
+                <CardTitle className="text-2xl font-bold text-gray-900 flex items-center gap-2">
+                  <Trash2 className="h-6 w-6 text-red-600" />
+                  Delete Tradeshow
+                </CardTitle>
+                <Button
+                  variant="ghost"
+                  size="sm"
+                  onClick={handleDeleteCancel}
+                  className="hover:bg-gray-100"
+                >
+                  <X className="h-5 w-5" />
+                </Button>
+              </div>
+            </CardHeader>
+            <CardContent className="pt-6">
+              <div className="space-y-4">
+                <div className="bg-red-50 border border-red-200 rounded-lg p-4">
+                  <p className="text-sm text-red-800 font-semibold mb-2">⚠️ Warning: This action cannot be undone!</p>
+                  <p className="text-sm text-red-700">
+                    You are about to permanently delete <strong>"{tradeshowToDelete.name}"</strong> and all associated submissions and badge photos.
+                  </p>
+                </div>
+
+                <div>
+                  <label className="block text-sm font-semibold text-gray-900 mb-2">
+                    Type <code className="bg-gray-100 px-2 py-1 rounded text-red-600 font-mono text-sm">delete this tradeshow</code> to confirm:
+                  </label>
+                  <input
+                    type="text"
+                    value={deleteConfirmation}
+                    onChange={(e) => setDeleteConfirmation(e.target.value)}
+                    className="w-full px-4 py-2 border-2 border-gray-300 rounded-lg focus:ring-2 focus:ring-red-500 focus:border-red-500 outline-none text-gray-900"
+                    placeholder="Type here to confirm..."
+                    autoFocus
+                  />
+                </div>
+
+                <div className="flex gap-3 pt-4">
+                  <Button
+                    type="button"
+                    variant="outline"
+                    onClick={handleDeleteCancel}
+                    className="flex-1 border-2 hover:bg-gray-50"
+                    disabled={deletingId === tradeshowToDelete.id}
+                  >
+                    Cancel
+                  </Button>
+                  <Button
+                    type="button"
+                    onClick={handleDeleteConfirm}
+                    disabled={deleteConfirmation !== "delete this tradeshow" || deletingId === tradeshowToDelete.id}
+                    className="flex-1 bg-red-600 hover:bg-red-700 text-white disabled:opacity-50 disabled:cursor-not-allowed"
+                  >
+                    {deletingId === tradeshowToDelete.id ? (
+                      <>
+                        <Loader2 className="mr-2 h-4 w-4 animate-spin" />
+                        Deleting...
+                      </>
+                    ) : (
+                      <>
+                        <Trash2 className="mr-2 h-4 w-4" />
+                        Delete Permanently
+                      </>
+                    )}
+                  </Button>
+                </div>
+              </div>
             </CardContent>
           </Card>
         </div>
