@@ -9,6 +9,8 @@ export interface User {
   name: string
   role: "admin" | "rep"
   repCode?: string | null
+  tenantId?: number
+  tenantSubdomain?: string
 }
 
 export const authOptions: NextAuthOptions = {
@@ -27,11 +29,20 @@ export const authOptions: NextAuthOptions = {
         try {
           const sql = neon(process.env.DATABASE_URL!)
 
-          // Fetch user from database
+          // Fetch user from database with tenant information
           const users = await sql`
-            SELECT id, email, name, password_hash, role, rep_code
-            FROM users
-            WHERE email = ${credentials.email}
+            SELECT
+              u.id,
+              u.email,
+              u.name,
+              u.password_hash,
+              u.role,
+              u.rep_code,
+              u.tenant_id,
+              t.subdomain as tenant_subdomain
+            FROM users u
+            LEFT JOIN tenants t ON u.tenant_id = t.id
+            WHERE u.email = ${credentials.email}
             LIMIT 1
           `
 
@@ -61,6 +72,8 @@ export const authOptions: NextAuthOptions = {
             name: user.name,
             role: user.role as "admin" | "rep",
             repCode: user.rep_code,
+            tenantId: user.tenant_id,
+            tenantSubdomain: user.tenant_subdomain,
           }
         } catch (error) {
           console.error("Authentication error:", error)
@@ -75,6 +88,8 @@ export const authOptions: NextAuthOptions = {
         token.id = user.id
         token.role = (user as User).role
         token.repCode = (user as User).repCode
+        token.tenantId = (user as User).tenantId
+        token.tenantSubdomain = (user as User).tenantSubdomain
       }
       return token
     },
@@ -83,6 +98,8 @@ export const authOptions: NextAuthOptions = {
         session.user.id = token.id as string
         session.user.role = token.role as "admin" | "rep"
         session.user.repCode = token.repCode as string | undefined
+        session.user.tenantId = token.tenantId as number | undefined
+        session.user.tenantSubdomain = token.tenantSubdomain as string | undefined
       }
       return session
     },

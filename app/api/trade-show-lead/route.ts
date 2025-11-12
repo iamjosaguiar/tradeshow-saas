@@ -1,5 +1,6 @@
 import { NextRequest, NextResponse } from "next/server"
 import { neon } from "@neondatabase/serverless"
+import { syncContactToActiveCampaign, createDynamics365Lead } from "@/lib/crm"
 
 export async function POST(request: NextRequest) {
   try {
@@ -27,14 +28,19 @@ export async function POST(request: NextRequest) {
     // Initialize SQL connection
     const sql = neon(process.env.DATABASE_URL!)
 
-    // Look up tradeshow ID from slug
+    // Look up tradeshow with tenant information
     let tradeshowId: number | null = null
+    let tenantId: number | null = null
     let activeCampaignTagId: string | null = null
     let isSelfManagedEvent = false
 
     if (tradeshowSlug) {
       const tradeshows = await sql`
-        SELECT t.id, tt.tag_value as activecampaign_tag_id, u.role as created_by_role
+        SELECT
+          t.id,
+          t.tenant_id,
+          tt.tag_value as activecampaign_tag_id,
+          u.role as created_by_role
         FROM tradeshows t
         LEFT JOIN tradeshow_tags tt ON t.id = tt.tradeshow_id AND tt.tag_name = 'activecampaign_tag_id'
         LEFT JOIN users u ON t.created_by = u.id
@@ -44,12 +50,19 @@ export async function POST(request: NextRequest) {
 
       if (tradeshows.length > 0) {
         tradeshowId = tradeshows[0].id
+        tenantId = tradeshows[0].tenant_id
         activeCampaignTagId = tradeshows[0].activecampaign_tag_id
         isSelfManagedEvent = tradeshows[0].created_by_role === 'rep'
       }
     }
 
-    // Look up rep user ID, name, and Dynamics user ID from rep code (both reps and admins)
+    if (!tenantId) {
+      return NextResponse.json({
+        error: "Invalid tradeshow or tenant not found"
+      }, { status: 400 })
+    }
+
+    // Look up rep user ID, name, and Dynamics user ID from rep code
     let repUserId: number | null = null
     let repName: string | null = null
     let dynamicsUserId: string | null = null
@@ -58,7 +71,9 @@ export async function POST(request: NextRequest) {
       const reps = await sql`
         SELECT id, name, dynamics_user_id, role
         FROM users
-        WHERE rep_code = ${repCode} AND role IN ('rep', 'admin')
+        WHERE rep_code = ${repCode}
+          AND role IN ('rep', 'admin')
+          AND tenant_id = ${tenantId}
         LIMIT 1
       `
 
@@ -69,32 +84,38 @@ export async function POST(request: NextRequest) {
       }
     }
 
-    // Get ActiveCampaign credentials from environment variables
-    const AC_API_URL = process.env.ACTIVECAMPAIGN_API_URL
-    const AC_API_KEY = process.env.ACTIVECAMPAIGN_API_KEY
-
-    // Skip ActiveCampaign sync for self managed events
-    if (isSelfManagedEvent) {
-      console.log("Skipping ActiveCampaign sync for self managed event")
-    } else if (!AC_API_URL || !AC_API_KEY) {
-      console.error("ActiveCampaign credentials not configured")
-      // Return success even if AC is not configured to prevent form errors during setup
-      return NextResponse.json({
-        success: true,
-        message: "Form submitted (ActiveCampaign not configured)",
-      })
-    }
-
     // Convert file to binary for storage (only if badge photo exists)
     let photoUrl = null
     if (badgePhoto && badgePhoto.size > 0) {
       const bytes = await badgePhoto.arrayBuffer()
       const buffer = Buffer.from(bytes)
 
-      // Save badge photo to Neon DB as binary (bytea) with tradeshow_id and submitted_by_rep
+      // Save badge photo with tenant_id
       const photoResult = await sql`
-        INSERT INTO badge_photos (contact_email, contact_name, filename, mime_type, file_size, image_data, form_source, tradeshow_id, submitted_by_rep)
-        VALUES (${email}, ${name}, ${badgePhoto.name}, ${badgePhoto.type}, ${badgePhoto.size}, ${buffer}, 'trade-show-lead', ${tradeshowId}, ${repUserId})
+        INSERT INTO badge_photos (
+          contact_email,
+          contact_name,
+          filename,
+          mime_type,
+          file_size,
+          image_data,
+          form_source,
+          tradeshow_id,
+          submitted_by_rep,
+          tenant_id
+        )
+        VALUES (
+          ${email},
+          ${name},
+          ${badgePhoto.name},
+          ${badgePhoto.type},
+          ${badgePhoto.size},
+          ${buffer},
+          'trade-show-lead',
+          ${tradeshowId},
+          ${repUserId},
+          ${tenantId}
+        )
         RETURNING id
       `
 
@@ -102,211 +123,61 @@ export async function POST(request: NextRequest) {
       photoUrl = `${request.nextUrl.origin}/api/badge-photo/${photoId}`
     }
 
-    // ActiveCampaign sync (skip for self managed events)
+    // ActiveCampaign sync using tenant-specific credentials (skip for self managed events)
     let contactId = null
     if (!isSelfManagedEvent) {
-      // Create or update contact in ActiveCampaign
-      const contactData = {
-        contact: {
-          email: email,
+      const acResult = await syncContactToActiveCampaign(
+        tenantId,
+        {
+          email,
           firstName: name.split(" ")[0] || name,
           lastName: name.split(" ").slice(1).join(" ") || "",
-          phone: phone || "",
+          phone,
           fieldValues: [
-            {
-              field: "1", // Country
-              value: country || "",
-            },
-            {
-              field: "4", // Job Title (using for Role)
-              value: role || "",
-            },
-            {
-              field: "8", // Company
-              value: company || "",
-            },
-            {
-              field: "9", // Comments
-              value: comments || "",
-            },
-            {
-              field: "11", // Current Respirator
-              value: currentRespirator || "",
-            },
-            {
-              field: "12", // Work Environment
-              value: workEnvironment || "",
-            },
-            {
-              field: "13", // Number of Staff
-              value: numberOfStaff || "",
-            },
-            {
-              field: "14", // Sales Manager
-              value: repName || "",
-            },
+            { field: "country", value: country || "" },
+            { field: "job_title", value: role || "" },
+            { field: "company", value: company || "" },
+            { field: "comments", value: comments || "" },
+            { field: "current_respirator", value: currentRespirator || "" },
+            { field: "work_environment", value: workEnvironment || "" },
+            { field: "number_of_staff", value: numberOfStaff || "" },
+            { field: "sales_manager", value: repName || "" },
           ],
         },
-      }
+        activeCampaignTagId ? [activeCampaignTagId] : []
+      )
 
-      // Add contact to ActiveCampaign
-      const acResponse = await fetch(`${AC_API_URL}/api/3/contacts`, {
-        method: "POST",
-        headers: {
-          "Api-Token": AC_API_KEY,
-          "Content-Type": "application/json",
-        },
-        body: JSON.stringify(contactData),
-      })
-
-      if (!acResponse.ok) {
-        const errorText = await acResponse.text()
-        console.error("ActiveCampaign API error:", errorText)
-
-        // Still return success to user, but log the error
-        return NextResponse.json({
-          success: true,
-          message: "Form submitted (ActiveCampaign sync pending)",
-        })
-      }
-
-      const acResult = await acResponse.json()
-      contactId = acResult.contact?.id
-
-      // Add note to contact with badge photo URL only
-      // All other form data is now stored in custom fields
-      if (contactId) {
-        const repInfo = repName ? `\nCaptured by Rep: ${repName} (${repCode})` : ""
-        const tradeshowInfo = tradeshowSlug ? `\nTradeshow: ${tradeshowSlug}` : ""
-        const photoInfo = photoUrl ? `\n\nBadge Photo: ${badgePhoto.name} (${(badgePhoto.size / 1024).toFixed(2)} KB)\nBadge Photo URL: ${photoUrl}` : ""
-
-        const noteData = {
-          note: {
-            note: `Trade Show Lead Submission${photoInfo}${tradeshowInfo}${repInfo}`,
-            relid: contactId,
-            reltype: "Subscriber",
-          },
-        }
-
-        await fetch(`${AC_API_URL}/api/3/notes`, {
-          method: "POST",
-          headers: {
-            "Api-Token": AC_API_KEY,
-            "Content-Type": "application/json",
-          },
-          body: JSON.stringify(noteData),
-        })
-      }
-
-      // Tag the contact with the tradeshow's ActiveCampaign tag (if configured)
-      if (contactId && activeCampaignTagId) {
-        const tagData = {
-          contactTag: {
-            contact: contactId,
-            tag: activeCampaignTagId,
-          },
-        }
-
-        await fetch(`${AC_API_URL}/api/3/contactTags`, {
-          method: "POST",
-          headers: {
-            "Api-Token": AC_API_KEY,
-            "Content-Type": "application/json",
-          },
-          body: JSON.stringify(tagData),
-        })
+      if (acResult.success) {
+        contactId = acResult.contactId
+        console.log(`[TradeShowLead] Created AC contact: ${contactId}`)
+      } else {
+        console.warn(`[TradeShowLead] AC sync failed: ${acResult.error}`)
+        // Continue even if AC fails - don't block form submission
       }
     }
 
-    // Create Lead in Dynamics 365
-    const D365_TENANT_ID = process.env.DYNAMICS_TENANT_ID
-    const D365_CLIENT_ID = process.env.DYNAMICS_CLIENT_ID
-    const D365_CLIENT_SECRET = process.env.DYNAMICS_CLIENT_SECRET
-    const D365_INSTANCE_URL = process.env.DYNAMICS_INSTANCE_URL
+    // Create Lead in Dynamics 365 using tenant-specific credentials
+    const d365Result = await createDynamics365Lead(
+      tenantId,
+      {
+        subject: `Tradeshow Lead: ${name}${tradeshowSlug ? ` - ${tradeshowSlug}` : ""}`,
+        firstname: name.split(" ")[0] || name,
+        lastname: name.split(" ").slice(1).join(" ") || name,
+        emailaddress1: email,
+        companyname: company || "",
+        jobtitle: role || "",
+        description: `${photoUrl ? `Badge Photo: ${photoUrl}\n\n` : ""}Current Respirator: ${currentRespirator || "Not specified"}\nWork Environment: ${workEnvironment || "Not specified"}\nCountry: ${country || "Not specified"}\nComments: ${comments || "None"}${tradeshowSlug ? `\nTradeshow: ${tradeshowSlug}` : ""}${repName ? `\nRep: ${repName}` : ""}`,
+        telephone1: phone || "",
+        address1_country: country || "",
+      },
+      dynamicsUserId || undefined
+    )
 
-    if (D365_TENANT_ID && D365_CLIENT_ID && D365_CLIENT_SECRET && D365_INSTANCE_URL) {
-      try {
-        // Get OAuth token from Azure AD
-        const tokenResponse = await fetch(
-          `https://login.microsoftonline.com/${D365_TENANT_ID}/oauth2/v2.0/token`,
-          {
-            method: "POST",
-            headers: {
-              "Content-Type": "application/x-www-form-urlencoded",
-            },
-            body: new URLSearchParams({
-              client_id: D365_CLIENT_ID,
-              client_secret: D365_CLIENT_SECRET,
-              scope: `${D365_INSTANCE_URL}/.default`,
-              grant_type: "client_credentials",
-            }),
-          }
-        )
-
-        if (!tokenResponse.ok) {
-          console.error("Failed to get D365 token:", await tokenResponse.text())
-        } else {
-          const tokenData = await tokenResponse.json()
-          const accessToken = tokenData.access_token
-
-          // Prepare lead data for Dynamics 365
-          const tradeshowInfo = tradeshowSlug ? ` - ${tradeshowSlug}` : ""
-          const repInfo = repName ? ` (Rep: ${repName})` : ""
-
-          // Convert numberOfStaff to integer if possible
-          let employeeCount = null
-          if (numberOfStaff) {
-            const match = numberOfStaff.match(/\d+/)
-            if (match) {
-              employeeCount = parseInt(match[0])
-            }
-          }
-
-          const photoDescription = photoUrl ? `Badge Photo: ${photoUrl}\n\n` : ""
-
-          const leadData: any = {
-            subject: `Tradeshow Lead: ${name}${tradeshowInfo}`,
-            firstname: name.split(" ")[0] || name,
-            lastname: name.split(" ").slice(1).join(" ") || name,
-            emailaddress1: email,
-            companyname: company || "",
-            jobtitle: role || "",
-            description: `${photoDescription}Current Respirator: ${currentRespirator || "Not specified"}\nWork Environment: ${workEnvironment || "Not specified"}\nCountry: ${country || "Not specified"}\nComments: ${comments || "None"}${tradeshowInfo}${repInfo}`,
-            telephone1: phone || "",
-            address1_country: country || "",
-            numberofemployees: employeeCount,
-            leadsourcecode: 7, // Trade Show
-          }
-
-          // Assign lead to Dynamics user if configured for this rep
-          if (dynamicsUserId) {
-            leadData["ownerid@odata.bind"] = `/systemusers(${dynamicsUserId})`
-          }
-
-          // Create lead in Dynamics 365
-          const leadResponse = await fetch(`${D365_INSTANCE_URL}/api/data/v9.2/leads`, {
-            method: "POST",
-            headers: {
-              Authorization: `Bearer ${accessToken}`,
-              "Content-Type": "application/json",
-              Accept: "application/json",
-              "OData-MaxVersion": "4.0",
-              "OData-Version": "4.0",
-            },
-            body: JSON.stringify(leadData),
-          })
-
-          if (leadResponse.ok) {
-            const leadId = leadResponse.headers.get("OData-EntityId")
-            console.log(`Created Dynamics 365 lead: ${leadId}`)
-          } else {
-            console.error("Failed to create D365 lead:", await leadResponse.text())
-          }
-        }
-      } catch (d365Error) {
-        console.error("Error creating Dynamics 365 lead:", d365Error)
-        // Continue even if D365 fails - form submission still succeeds
-      }
+    if (d365Result.success) {
+      console.log(`[TradeShowLead] Created D365 lead: ${d365Result.leadId}`)
+    } else {
+      console.warn(`[TradeShowLead] D365 sync failed: ${d365Result.error}`)
+      // Continue even if D365 fails - don't block form submission
     }
 
     return NextResponse.json({

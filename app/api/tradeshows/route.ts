@@ -14,7 +14,13 @@ export async function GET(request: NextRequest) {
       return NextResponse.json({ error: "Unauthorized" }, { status: 401 })
     }
 
+    // Ensure user has tenant access
+    if (!session.user.tenantId) {
+      return NextResponse.json({ error: "No tenant associated with user" }, { status: 403 })
+    }
+
     const sql = neon(process.env.DATABASE_URL!)
+    const tenantId = session.user.tenantId
 
     // For reps, only show their own submission counts and filter by assignments
     // For admins, show total submission counts
@@ -25,16 +31,22 @@ export async function GET(request: NextRequest) {
       let hasOwnAssignments = false
 
       try {
-        // Check if the assignment system is being used at all
+        // Check if the assignment system is being used at all (within tenant)
         const totalAssignments = await sql`
-          SELECT COUNT(*) as count FROM tradeshow_rep_assignments
+          SELECT COUNT(*) as count
+          FROM tradeshow_rep_assignments tra
+          INNER JOIN tradeshows t ON tra.tradeshow_id = t.id
+          WHERE t.tenant_id = ${tenantId}
         `
         assignmentsExist = parseInt(totalAssignments[0].count) > 0
 
         // Check if this specific rep has assignments
         const myAssignments = await sql`
-          SELECT COUNT(*) as count FROM tradeshow_rep_assignments
-          WHERE user_id = ${session.user.id}
+          SELECT COUNT(*) as count
+          FROM tradeshow_rep_assignments tra
+          INNER JOIN tradeshows t ON tra.tradeshow_id = t.id
+          WHERE tra.user_id = ${session.user.id}
+            AND t.tenant_id = ${tenantId}
         `
         hasOwnAssignments = parseInt(myAssignments[0].count) > 0
       } catch (error) {
@@ -64,6 +76,7 @@ export async function GET(request: NextRequest) {
           LEFT JOIN badge_photos bp ON t.id = bp.tradeshow_id
           INNER JOIN tradeshow_rep_assignments tra ON t.id = tra.tradeshow_id
           WHERE tra.user_id = ${session.user.id}
+            AND t.tenant_id = ${tenantId}
           GROUP BY t.id, u.name
           ORDER BY t.created_at DESC
         `
@@ -91,6 +104,7 @@ export async function GET(request: NextRequest) {
           LEFT JOIN users u ON t.created_by = u.id
           LEFT JOIN badge_photos bp ON t.id = bp.tradeshow_id
           WHERE t.is_active = true
+            AND t.tenant_id = ${tenantId}
           GROUP BY t.id, u.name
           ORDER BY t.created_at DESC
         `
@@ -116,15 +130,18 @@ export async function GET(request: NextRequest) {
         FROM tradeshows t
         LEFT JOIN users u ON t.created_by = u.id
         LEFT JOIN badge_photos bp ON t.id = bp.tradeshow_id
+        WHERE t.tenant_id = ${tenantId}
         GROUP BY t.id, u.name, u.role
         ORDER BY t.created_at DESC
       `
     }
 
-    // Get tags for each tradeshow
+    // Get tags for each tradeshow (within tenant)
     const tags = await sql`
-      SELECT tradeshow_id, tag_name, tag_value
-      FROM tradeshow_tags
+      SELECT tt.tradeshow_id, tt.tag_name, tt.tag_value
+      FROM tradeshow_tags tt
+      INNER JOIN tradeshows t ON tt.tradeshow_id = t.id
+      WHERE t.tenant_id = ${tenantId}
     `
 
     // Get assigned reps for each tradeshow (with error handling for new table)
@@ -133,7 +150,9 @@ export async function GET(request: NextRequest) {
       assignments = await sql`
         SELECT tra.tradeshow_id, u.id, u.name, u.email, u.role
         FROM tradeshow_rep_assignments tra
+        INNER JOIN tradeshows t ON tra.tradeshow_id = t.id
         INNER JOIN users u ON tra.user_id = u.id
+        WHERE t.tenant_id = ${tenantId}
         ORDER BY u.name
       `
     } catch (error) {
@@ -163,6 +182,11 @@ export async function POST(request: NextRequest) {
       return NextResponse.json({ error: "Unauthorized" }, { status: 401 })
     }
 
+    // Ensure user has tenant access
+    if (!session.user.tenantId) {
+      return NextResponse.json({ error: "No tenant associated with user" }, { status: 403 })
+    }
+
     const body = await request.json()
     const { name, slug, description, location, startDate, endDate, defaultCountry, assignedReps = [] } = body
 
@@ -171,10 +195,13 @@ export async function POST(request: NextRequest) {
     }
 
     const sql = neon(process.env.DATABASE_URL!)
+    const tenantId = session.user.tenantId
 
-    // Check if slug already exists
+    // Check if slug already exists within this tenant
     const existing = await sql`
-      SELECT id FROM tradeshows WHERE slug = ${slug}
+      SELECT id FROM tradeshows
+      WHERE slug = ${slug}
+        AND tenant_id = ${tenantId}
     `
 
     if (existing.length > 0) {
@@ -183,7 +210,7 @@ export async function POST(request: NextRequest) {
 
     // Create tradeshow
     const result = await sql`
-      INSERT INTO tradeshows (name, slug, description, location, start_date, end_date, default_country, is_active, created_by)
+      INSERT INTO tradeshows (name, slug, description, location, start_date, end_date, default_country, is_active, created_by, tenant_id)
       VALUES (
         ${name},
         ${slug},
@@ -193,18 +220,28 @@ export async function POST(request: NextRequest) {
         ${endDate || null},
         ${defaultCountry || null},
         true,
-        ${session.user.id}
+        ${session.user.id},
+        ${tenantId}
       )
       RETURNING id, name, slug, description, location, start_date, end_date, default_country, is_active, created_at
     `
 
     const tradeshowId = result[0].id
 
-    // Automatically create ActiveCampaign tag
-    const AC_API_URL = process.env.ACTIVECAMPAIGN_API_URL
-    const AC_API_KEY = process.env.ACTIVECAMPAIGN_API_KEY
+    // Automatically create ActiveCampaign tag using tenant-specific credentials
+    // Get tenant's ActiveCampaign connection
+    const acConnection = await sql`
+      SELECT api_url, api_key, is_connected
+      FROM tenant_crm_connections
+      WHERE tenant_id = ${tenantId}
+        AND crm_type = 'activecampaign'
+        AND is_active = TRUE
+      LIMIT 1
+    `
 
-    if (AC_API_URL && AC_API_KEY) {
+    if (acConnection.length > 0 && acConnection[0].is_connected) {
+      const AC_API_URL = acConnection[0].api_url
+      const AC_API_KEY = acConnection[0].api_key
       try {
         // Generate tag name: "Tradeshow: {name} - {year}"
         const year = startDate ? new Date(startDate).getFullYear() : new Date().getFullYear()
