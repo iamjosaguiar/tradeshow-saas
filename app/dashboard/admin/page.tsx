@@ -453,51 +453,59 @@ export default function AdminDashboard() {
                     </div>
                   </div>
 
-                  <div className="flex gap-2 pt-2 border-t">
-                    <Button
-                      variant="outline"
-                      size="sm"
-                      className="flex items-center gap-2"
-                      onClick={(e) => {
-                        e.stopPropagation()
-                        router.push(`/dashboard/admin/tradeshows/${tradeshow.id}`)
-                      }}
-                    >
-                      <Eye className="h-4 w-4" />
-                      View Details
-                    </Button>
+                  <div className="flex items-center justify-between pt-2 border-t">
+                    <div className="flex gap-2">
+                      <Button
+                        variant="outline"
+                        size="sm"
+                        className="flex items-center gap-2"
+                        onClick={(e) => {
+                          e.stopPropagation()
+                          router.push(`/dashboard/admin/tradeshows/${tradeshow.id}`)
+                        }}
+                      >
+                        <Eye className="h-4 w-4" />
+                        View Details
+                      </Button>
 
-                    <Button
-                      variant="outline"
-                      size="sm"
-                      className="flex items-center gap-2"
-                      onClick={(e) => handleToggleActive(tradeshow.id, e)}
-                      disabled={togglingId === tradeshow.id}
-                    >
-                      {togglingId === tradeshow.id ? (
-                        <Loader2 className="h-4 w-4 animate-spin" />
-                      ) : tradeshow.is_active ? (
-                        <Archive className="h-4 w-4" />
-                      ) : (
-                        <ArchiveRestore className="h-4 w-4" />
-                      )}
-                      {tradeshow.is_active ? "Archive" : "Activate"}
-                    </Button>
+                      <Button
+                        variant="outline"
+                        size="sm"
+                        className="flex items-center gap-2 text-red-600 hover:text-red-700 hover:bg-red-50 border-red-200"
+                        onClick={(e) => handleDelete(tradeshow.id, tradeshow.name, e)}
+                        disabled={deletingId === tradeshow.id}
+                      >
+                        {deletingId === tradeshow.id ? (
+                          <Loader2 className="h-4 w-4 animate-spin" />
+                        ) : (
+                          <Trash2 className="h-4 w-4" />
+                        )}
+                        Delete
+                      </Button>
+                    </div>
 
-                    <Button
-                      variant="outline"
-                      size="sm"
-                      className="flex items-center gap-2 text-red-600 hover:text-red-700 hover:bg-red-50 border-red-200"
-                      onClick={(e) => handleDelete(tradeshow.id, tradeshow.name, e)}
-                      disabled={deletingId === tradeshow.id}
-                    >
-                      {deletingId === tradeshow.id ? (
-                        <Loader2 className="h-4 w-4 animate-spin" />
-                      ) : (
-                        <Trash2 className="h-4 w-4" />
-                      )}
-                      Delete
-                    </Button>
+                    <div className="flex items-center gap-2">
+                      <span className="text-sm text-gray-600">
+                        {tradeshow.is_active ? "Active" : "Archived"}
+                      </span>
+                      <button
+                        onClick={(e) => handleToggleActive(tradeshow.id, e)}
+                        disabled={togglingId === tradeshow.id}
+                        className={`relative inline-flex h-6 w-11 items-center rounded-full transition-colors focus:outline-none focus:ring-2 focus:ring-[rgb(27,208,118)] focus:ring-offset-2 ${
+                          togglingId === tradeshow.id
+                            ? "cursor-not-allowed opacity-50"
+                            : "cursor-pointer"
+                        } ${
+                          tradeshow.is_active ? "bg-[rgb(27,208,118)]" : "bg-gray-300"
+                        }`}
+                      >
+                        <span
+                          className={`inline-block h-4 w-4 transform rounded-full bg-white transition-transform ${
+                            tradeshow.is_active ? "translate-x-6" : "translate-x-1"
+                          }`}
+                        />
+                      </button>
+                    </div>
                   </div>
                 </div>
               </CardContent>
