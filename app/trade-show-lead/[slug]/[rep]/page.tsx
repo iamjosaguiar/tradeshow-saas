@@ -10,6 +10,7 @@ import { track } from "@vercel/analytics"
 import PhoneInput from "react-phone-number-input"
 import "react-phone-number-input/style.css"
 import { CountrySelect } from "@/components/country-select"
+import { getCountryCode } from "@/lib/country-codes"
 
 interface FormData {
   email: string
@@ -77,6 +78,7 @@ export default function TradeshowRepLeadForm() {
   const [isSubmitting, setIsSubmitting] = useState(false)
   const [showSuccess, setShowSuccess] = useState(false)
   const [photoPreview, setPhotoPreview] = useState<string | null>(null)
+  const [phoneDefaultCountry, setPhoneDefaultCountry] = useState<string>("DE")
 
   // Fetch tradeshow and rep details
   useEffect(() => {
@@ -94,6 +96,7 @@ export default function TradeshowRepLeadForm() {
           // Pre-populate country if default is set
           if (tradeshowData.default_country) {
             setFormData(prev => ({ ...prev, country: tradeshowData.default_country }))
+            setPhoneDefaultCountry(getCountryCode(tradeshowData.default_country))
           }
         }
 
@@ -387,7 +390,7 @@ export default function TradeshowRepLeadForm() {
                   </label>
                   <PhoneInput
                     international
-                    defaultCountry="DE"
+                    defaultCountry={phoneDefaultCountry as any}
                     countryOptionsOrder={["DE", "FR", "GB", "AT", "CH", "US", "AU", "CA", "|", "..."]}
                     value={formData.phone}
                     onChange={(value) => setFormData({ ...formData, phone: value || "" })}

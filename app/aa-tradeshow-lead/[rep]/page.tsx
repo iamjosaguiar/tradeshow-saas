@@ -8,10 +8,14 @@ import { Badge } from "@/components/ui/badge"
 import { Upload, CheckCircle, Loader2 } from "lucide-react"
 import { track } from "@vercel/analytics"
 import { CountrySelect } from "@/components/country-select"
+import PhoneInput from "react-phone-number-input"
+import "react-phone-number-input/style.css"
+import { getCountryCode } from "@/lib/country-codes"
 
 interface FormData {
   email: string
   name: string
+  phone: string
   country: string
   comments: string
   company: string
@@ -48,6 +52,7 @@ export default function AATradeShowRepForm() {
   const [formData, setFormData] = useState<FormData>({
     email: "",
     name: "",
+    phone: "",
     country: "",
     comments: "",
     company: "",
@@ -62,6 +67,7 @@ export default function AATradeShowRepForm() {
   const [isSubmitting, setIsSubmitting] = useState(false)
   const [showSuccess, setShowSuccess] = useState(false)
   const [photoPreview, setPhotoPreview] = useState<string | null>(null)
+  const [phoneDefaultCountry, setPhoneDefaultCountry] = useState<string>("DE")
 
   // Track page view on mount
   useEffect(() => {
@@ -120,6 +126,7 @@ export default function AATradeShowRepForm() {
       const submitData = new FormData()
       submitData.append("email", formData.email)
       submitData.append("name", formData.name)
+      submitData.append("phone", formData.phone)
       submitData.append("region", formData.country)
       submitData.append("comments", formData.comments)
       submitData.append("company", formData.company)
@@ -148,6 +155,7 @@ export default function AATradeShowRepForm() {
         setFormData({
           email: "",
           name: "",
+          phone: "",
           country: "",
           comments: "",
           company: "",
@@ -225,6 +233,21 @@ export default function AATradeShowRepForm() {
                   placeholder="Full Name"
                 />
                 {errors.name && <p className="text-red-500 text-sm mt-1">{errors.name}</p>}
+              </div>
+
+              {/* Phone Number */}
+              <div>
+                <label htmlFor="phone" className="block text-sm font-medium text-gray-700 mb-2">
+                  Phone Number
+                </label>
+                <PhoneInput
+                  international
+                  defaultCountry={phoneDefaultCountry as any}
+                  countryOptionsOrder={["DE", "FR", "GB", "AT", "CH", "US", "AU", "CA", "|", "..."]}
+                  value={formData.phone}
+                  onChange={(value) => setFormData({ ...formData, phone: value || "" })}
+                  className="phone-input-custom"
+                />
               </div>
 
               {/* Country */}
