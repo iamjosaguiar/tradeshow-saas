@@ -200,7 +200,7 @@ export default function RepDashboard() {
       <header className="bg-white border-b border-gray-200 shadow-sm">
         <div className="container mx-auto px-4 py-4 flex items-center justify-between">
           <div>
-            <h1 className="text-xl font-bold text-gray-900">Rep Dashboard</h1>
+            <h1 className="text-xl font-bold text-gray-900">Dashboard</h1>
             <p className="text-sm text-gray-500">Welcome back, {session?.user.name}</p>
           </div>
           <div className="flex gap-3">
