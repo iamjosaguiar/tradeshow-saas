@@ -1,6 +1,6 @@
 # 🚀 Tradeshow Lead Capture SaaS
 
-Multi-tenant SaaS platform for tradeshow lead capture with per-tenant CRM integrations. Originally built for CleanSpace Technology, now architected to serve multiple clients.
+Multi-tenant SaaS platform for tradeshow lead capture with per-tenant CRM integrations. Serve multiple clients with complete data isolation and custom branding.
 
 [![Next.js](https://img.shields.io/badge/Next.js-14-black)](https://nextjs.org/)
 [![TypeScript](https://img.shields.io/badge/TypeScript-5.0-blue)](https://www.typescriptlang.org/)
@@ -37,8 +37,8 @@ Multi-tenant SaaS platform for tradeshow lead capture with per-tenant CRM integr
 ### 1. Clone and Install
 
 ```bash
-git clone https://github.com/iamjosaguiar/cleanspace-tradeshow-saas.git
-cd cleanspace-tradeshow-saas
+git clone https://github.com/iamjosaguiar/tradeshow-saas.git
+cd tradeshow-saas
 npm install
 ```
 
@@ -212,7 +212,7 @@ This project is proprietary. All rights reserved.
 
 ## 🙏 Acknowledgments
 
-Built for CleanSpace Technology, evolved into a multi-tenant SaaS platform.
+Enterprise-grade multi-tenant SaaS platform for tradeshow lead capture.
 
 **Powered by:**
 - [Claude Code](https://claude.com/claude-code) - AI pair programming
@@ -222,7 +222,7 @@ Built for CleanSpace Technology, evolved into a multi-tenant SaaS platform.
 
 ## 📞 Support
 
-- **Issues:** [GitHub Issues](https://github.com/iamjosaguiar/cleanspace-tradeshow-saas/issues)
+- **Issues:** [GitHub Issues](https://github.com/iamjosaguiar/tradeshow-saas/issues)
 - **Documentation:** See documentation files in root directory
 
 ---
