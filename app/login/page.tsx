@@ -67,7 +67,7 @@ export default function LoginPage() {
                 <LogIn className="h-8 w-8 text-white" />
               </div>
               <Badge className="mb-4 px-4 py-2 text-sm font-medium bg-[rgb(27,208,118)] text-white border-0 mx-auto">
-                Sales Representative Portal
+                Sales Manager Portal
               </Badge>
               <CardTitle className="text-3xl md:text-4xl font-bold text-[rgb(4,45,35)] mb-2">
                 Sign In

@@ -250,7 +250,7 @@ export default function RepsManagementPage() {
         <div className="grid grid-cols-1 md:grid-cols-3 gap-6 mb-8">
           <Card>
             <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
-              <CardTitle className="text-sm font-medium">Total Sales Reps</CardTitle>
+              <CardTitle className="text-sm font-medium">Total Sales Managers</CardTitle>
               <Users className="h-4 w-4 text-muted-foreground" />
             </CardHeader>
             <CardContent>
@@ -299,7 +299,7 @@ export default function RepsManagementPage() {
             className="bg-[rgb(27,208,118)] hover:bg-[rgb(27,208,118)]/90 text-white"
           >
             <Plus className="h-4 w-4 mr-2" />
-            Add New Rep
+            Add New Manager
           </Button>
         </div>
 
@@ -337,7 +337,7 @@ export default function RepsManagementPage() {
                   {reps.length === 0 ? (
                     <tr>
                       <td colSpan={7} className="px-6 py-12 text-center text-gray-500">
-                        No representatives found. Click "Add New Rep" to get started.
+                        No sales managers found. Click "Add New Manager" to get started.
                       </td>
                     </tr>
                   ) : (
@@ -406,7 +406,7 @@ export default function RepsManagementPage() {
             <CardHeader className="bg-white border-b pb-4">
               <div className="flex items-center justify-between">
                 <CardTitle className="text-2xl font-bold text-gray-900">
-                  {modalMode === "create" ? "Add New Sales Rep" : "Edit Sales Rep"}
+                  {modalMode === "create" ? "Add New Sales Manager" : "Edit Sales Manager"}
                 </CardTitle>
                 <Button
                   variant="ghost"
@@ -419,8 +419,8 @@ export default function RepsManagementPage() {
               </div>
               <CardDescription className="text-gray-600 text-base mt-2">
                 {modalMode === "create"
-                  ? "Create a new sales representative account"
-                  : "Update sales representative information"}
+                  ? "Create a new sales manager account"
+                  : "Update sales manager information"}
               </CardDescription>
             </CardHeader>
             <CardContent className="pt-6">
