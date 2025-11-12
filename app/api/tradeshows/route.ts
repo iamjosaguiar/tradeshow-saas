@@ -20,13 +20,20 @@ export async function GET(request: NextRequest) {
     // For admins, show total submission counts
     let tradeshows
     if (session.user.role === "rep") {
-      // Check if this rep has any assignments
-      const hasAssignments = await sql`
-        SELECT COUNT(*) as count FROM tradeshow_rep_assignments
-        WHERE user_id = ${session.user.id}
-      `
+      // Check if this rep has any assignments (with error handling for new table)
+      let hasAssignments = false
+      try {
+        const assignmentCheck = await sql`
+          SELECT COUNT(*) as count FROM tradeshow_rep_assignments
+          WHERE user_id = ${session.user.id}
+        `
+        hasAssignments = parseInt(assignmentCheck[0].count) > 0
+      } catch (error) {
+        console.log('tradeshow_rep_assignments table not found, showing all active tradeshows')
+        hasAssignments = false
+      }
 
-      if (hasAssignments[0].count > 0) {
+      if (hasAssignments) {
         // Rep has assignments - show only assigned tradeshows
         tradeshows = await sql`
           SELECT
@@ -107,14 +114,19 @@ export async function GET(request: NextRequest) {
       FROM tradeshow_tags
     `
 
-    // Get assigned reps for each tradeshow
-    const assignments = await sql`
-      SELECT tra.tradeshow_id, u.id, u.name, u.email
-      FROM tradeshow_rep_assignments tra
-      INNER JOIN users u ON tra.user_id = u.id
-      WHERE u.role = 'rep'
-      ORDER BY u.name
-    `
+    // Get assigned reps for each tradeshow (with error handling for new table)
+    let assignments = []
+    try {
+      assignments = await sql`
+        SELECT tra.tradeshow_id, u.id, u.name, u.email
+        FROM tradeshow_rep_assignments tra
+        INNER JOIN users u ON tra.user_id = u.id
+        WHERE u.role = 'rep'
+        ORDER BY u.name
+      `
+    } catch (error) {
+      console.log('tradeshow_rep_assignments table not found, no assignments loaded')
+    }
 
     // Combine tradeshows with their tags and assigned reps
     const tradeshowsWithTags = tradeshows.map((tradeshow) => ({

@@ -56,14 +56,19 @@ export async function GET(request: NextRequest, { params }: { params: { id: stri
       ORDER BY bp.uploaded_at DESC
     `
 
-    // Get assigned reps
-    const assignedReps = await sql`
-      SELECT u.id, u.name, u.email
-      FROM tradeshow_rep_assignments tra
-      INNER JOIN users u ON tra.user_id = u.id
-      WHERE tra.tradeshow_id = ${tradeshowId} AND u.role = 'rep'
-      ORDER BY u.name
-    `
+    // Get assigned reps (with error handling for new table)
+    let assignedReps = []
+    try {
+      assignedReps = await sql`
+        SELECT u.id, u.name, u.email
+        FROM tradeshow_rep_assignments tra
+        INNER JOIN users u ON tra.user_id = u.id
+        WHERE tra.tradeshow_id = ${tradeshowId} AND u.role = 'rep'
+        ORDER BY u.name
+      `
+    } catch (error) {
+      console.log('tradeshow_rep_assignments table not found, no assignments loaded')
+    }
 
     return NextResponse.json({
       ...tradeshow[0],
