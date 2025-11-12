@@ -46,7 +46,7 @@ export default function AdminDashboard() {
   const [showCreateModal, setShowCreateModal] = useState(false)
   const [creating, setCreating] = useState(false)
   const [sortBy, setSortBy] = useState<string>("newest")
-  const [filterBy, setFilterBy] = useState<string>("all")
+  const [filterBy, setFilterBy] = useState<string>("active")
   const [deletingId, setDeletingId] = useState<number | null>(null)
   const [togglingId, setTogglingId] = useState<number | null>(null)
 
