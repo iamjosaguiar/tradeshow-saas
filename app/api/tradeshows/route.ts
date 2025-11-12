@@ -16,11 +16,11 @@ export async function GET(request: NextRequest) {
 
     const sql = neon(process.env.DATABASE_URL!)
 
-    // For reps, only show their own submission counts
+    // For reps, only show their own submission counts and filter by assignments
     // For admins, show total submission counts
     let tradeshows
     if (session.user.role === "rep") {
-      // Get tradeshows with rep's own submission count
+      // Get tradeshows assigned to this rep with their own submission count
       tradeshows = await sql`
         SELECT
           t.id,
@@ -39,6 +39,8 @@ export async function GET(request: NextRequest) {
         FROM tradeshows t
         LEFT JOIN users u ON t.created_by = u.id
         LEFT JOIN badge_photos bp ON t.id = bp.tradeshow_id
+        INNER JOIN tradeshow_rep_assignments tra ON t.id = tra.tradeshow_id
+        WHERE tra.user_id = ${session.user.id}
         GROUP BY t.id, u.name
         ORDER BY t.created_at DESC
       `
@@ -73,10 +75,20 @@ export async function GET(request: NextRequest) {
       FROM tradeshow_tags
     `
 
-    // Combine tradeshows with their tags
+    // Get assigned reps for each tradeshow
+    const assignments = await sql`
+      SELECT tra.tradeshow_id, u.id, u.name, u.email
+      FROM tradeshow_rep_assignments tra
+      INNER JOIN users u ON tra.user_id = u.id
+      WHERE u.role = 'rep'
+      ORDER BY u.name
+    `
+
+    // Combine tradeshows with their tags and assigned reps
     const tradeshowsWithTags = tradeshows.map((tradeshow) => ({
       ...tradeshow,
       tags: tags.filter((tag) => tag.tradeshow_id === tradeshow.id),
+      assignedReps: assignments.filter((assignment) => assignment.tradeshow_id === tradeshow.id),
     }))
 
     return NextResponse.json(tradeshowsWithTags)
@@ -96,7 +108,7 @@ export async function POST(request: NextRequest) {
     }
 
     const body = await request.json()
-    const { name, slug, description, location, startDate, endDate, defaultCountry } = body
+    const { name, slug, description, location, startDate, endDate, defaultCountry, assignedReps = [] } = body
 
     if (!name || !slug) {
       return NextResponse.json({ error: "Name and slug are required" }, { status: 400 })
@@ -175,6 +187,23 @@ export async function POST(request: NextRequest) {
       } catch (acError) {
         console.error("Error creating ActiveCampaign tag:", acError)
         // Continue even if AC tag creation fails - tradeshow is still created
+      }
+    }
+
+    // Assign reps to tradeshow if specified
+    if (assignedReps.length > 0) {
+      try {
+        for (const repId of assignedReps) {
+          await sql`
+            INSERT INTO tradeshow_rep_assignments (tradeshow_id, user_id)
+            VALUES (${tradeshowId}, ${repId})
+            ON CONFLICT (tradeshow_id, user_id) DO NOTHING
+          `
+        }
+        console.log(`Assigned ${assignedReps.length} reps to tradeshow ${tradeshowId}`)
+      } catch (assignError) {
+        console.error("Error assigning reps to tradeshow:", assignError)
+        // Continue even if rep assignment fails - tradeshow is still created
       }
     }
 

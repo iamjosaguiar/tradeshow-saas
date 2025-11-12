@@ -40,6 +40,15 @@ CREATE TABLE IF NOT EXISTS tradeshow_tags (
   created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP
 );
 
+-- Tradeshow rep assignments (many-to-many relationship)
+CREATE TABLE IF NOT EXISTS tradeshow_rep_assignments (
+  id SERIAL PRIMARY KEY,
+  tradeshow_id INTEGER NOT NULL REFERENCES tradeshows(id) ON DELETE CASCADE,
+  user_id INTEGER NOT NULL REFERENCES users(id) ON DELETE CASCADE,
+  created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
+  UNIQUE(tradeshow_id, user_id)
+);
+
 -- Update badge_photos table to include tradeshow reference
 -- If badge_photos already exists, add the new column
 ALTER TABLE badge_photos ADD COLUMN IF NOT EXISTS tradeshow_id INTEGER REFERENCES tradeshows(id) ON DELETE SET NULL;
@@ -63,6 +72,8 @@ CREATE INDEX IF NOT EXISTS idx_tradeshows_slug ON tradeshows(slug);
 CREATE INDEX IF NOT EXISTS idx_tradeshows_active ON tradeshows(is_active);
 CREATE INDEX IF NOT EXISTS idx_users_email ON users(email);
 CREATE INDEX IF NOT EXISTS idx_users_rep_code ON users(rep_code);
+CREATE INDEX IF NOT EXISTS idx_tradeshow_rep_assignments_tradeshow ON tradeshow_rep_assignments(tradeshow_id);
+CREATE INDEX IF NOT EXISTS idx_tradeshow_rep_assignments_user ON tradeshow_rep_assignments(user_id);
 
 -- Sessions table for NextAuth.js
 CREATE TABLE IF NOT EXISTS sessions (

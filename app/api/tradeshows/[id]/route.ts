@@ -56,10 +56,20 @@ export async function GET(request: NextRequest, { params }: { params: { id: stri
       ORDER BY bp.uploaded_at DESC
     `
 
+    // Get assigned reps
+    const assignedReps = await sql`
+      SELECT u.id, u.name, u.email
+      FROM tradeshow_rep_assignments tra
+      INNER JOIN users u ON tra.user_id = u.id
+      WHERE tra.tradeshow_id = ${tradeshowId} AND u.role = 'rep'
+      ORDER BY u.name
+    `
+
     return NextResponse.json({
       ...tradeshow[0],
       tags,
       submissions,
+      assignedReps,
     })
   } catch (error) {
     console.error("Error fetching tradeshow:", error)
@@ -80,7 +90,7 @@ export async function PATCH(request: NextRequest, { params }: { params: { id: st
     const tradeshowId = parseInt(params.id)
     const body = await request.json()
 
-    const { name, description, location, startDate, endDate, isActive, activeCampaignTagName } = body
+    const { name, description, location, startDate, endDate, isActive, activeCampaignTagName, assignedReps } = body
 
     // Update tradeshow
     await sql`
@@ -141,6 +151,34 @@ export async function PATCH(request: NextRequest, { params }: { params: { id: st
           console.error("Error creating ActiveCampaign tag:", acError)
           // Continue even if AC tag creation fails
         }
+      }
+    }
+
+    // Update rep assignments if provided
+    if (assignedReps !== undefined) {
+      try {
+        // Delete existing assignments
+        await sql`
+          DELETE FROM tradeshow_rep_assignments
+          WHERE tradeshow_id = ${tradeshowId}
+        `
+
+        // Insert new assignments
+        if (assignedReps.length > 0) {
+          for (const repId of assignedReps) {
+            await sql`
+              INSERT INTO tradeshow_rep_assignments (tradeshow_id, user_id)
+              VALUES (${tradeshowId}, ${repId})
+              ON CONFLICT (tradeshow_id, user_id) DO NOTHING
+            `
+          }
+          console.log(`Updated rep assignments for tradeshow ${tradeshowId}: ${assignedReps.length} reps assigned`)
+        } else {
+          console.log(`Removed all rep assignments for tradeshow ${tradeshowId}`)
+        }
+      } catch (assignError) {
+        console.error("Error updating rep assignments:", assignError)
+        // Continue even if rep assignment update fails
       }
     }
 
