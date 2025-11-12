@@ -252,7 +252,7 @@ export default function TradeshowRepLeadForm() {
             <CardTitle>Not Found</CardTitle>
             <CardDescription>
               {!tradeshow && "The requested tradeshow could not be found."}
-              {!rep && " The sales representative could not be found."}
+              {!rep && " The sales manager could not be found."}
             </CardDescription>
           </CardHeader>
         </Card>
@@ -313,7 +313,7 @@ export default function TradeshowRepLeadForm() {
               {/* Rep Badge */}
               <Badge className="mb-4 px-4 py-2 text-sm font-medium bg-[rgb(4,45,35)] text-white border-0 mx-auto flex items-center gap-2 w-fit">
                 <User className="h-4 w-4" />
-                Sales Rep: {rep.name}
+                Sales Manager: {rep.name}
               </Badge>
 
               {/* Tradeshow Info */}

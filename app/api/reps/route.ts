@@ -4,7 +4,7 @@ import { getServerSession } from "next-auth"
 import { authOptions } from "@/lib/auth"
 import bcrypt from "bcryptjs"
 
-// GET - List all sales reps and admins with rep codes
+// GET - List all sales managers and admins with rep codes
 export async function GET(request: NextRequest) {
   try {
     const session = await getServerSession(authOptions)
@@ -30,7 +30,7 @@ export async function GET(request: NextRequest) {
   }
 }
 
-// POST - Create new sales rep
+// POST - Create new sales manager
 export async function POST(request: NextRequest) {
   try {
     const session = await getServerSession(authOptions)
@@ -82,7 +82,7 @@ export async function POST(request: NextRequest) {
   }
 }
 
-// PUT - Update sales rep
+// PUT - Update sales manager
 export async function PUT(request: NextRequest) {
   try {
     const session = await getServerSession(authOptions)
@@ -164,7 +164,7 @@ export async function PUT(request: NextRequest) {
   }
 }
 
-// DELETE - Delete sales rep
+// DELETE - Delete sales manager
 export async function DELETE(request: NextRequest) {
   try {
     const session = await getServerSession(authOptions)

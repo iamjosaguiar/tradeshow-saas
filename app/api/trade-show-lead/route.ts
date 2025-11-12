@@ -133,7 +133,7 @@ export async function POST(request: NextRequest) {
             value: numberOfStaff || "",
           },
           {
-            field: "14", // Sales Rep
+            field: "14", // Sales Manager
             value: repName || "",
           },
         ],

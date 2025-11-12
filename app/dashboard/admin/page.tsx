@@ -106,6 +106,20 @@ export default function AdminDashboard() {
     }
   }
 
+  const fetchReps = async () => {
+    try {
+      const response = await fetch("/api/reps")
+      if (response.ok) {
+        const data = await response.json()
+        // Filter to only include reps (not admins)
+        const repsOnly = data.filter((user: Rep & { role: string }) => user.role === "rep")
+        setReps(repsOnly)
+      }
+    } catch (error) {
+      console.error("Error fetching reps:", error)
+    }
+  }
+
   const handleCreateTradeshow = async (e: React.FormEvent) => {
     e.preventDefault()
     setCreating(true)
@@ -122,6 +136,7 @@ export default function AdminDashboard() {
           startDate: formData.startDate || null,
           endDate: formData.endDate || null,
           defaultCountry: formData.defaultCountry || null,
+          assignedReps: selectedReps,
         }),
       })
 
@@ -136,6 +151,7 @@ export default function AdminDashboard() {
           endDate: "",
           defaultCountry: "",
         })
+        setSelectedReps([])
         fetchTradeshows()
       } else {
         const error = await response.json()
@@ -155,6 +171,12 @@ export default function AdminDashboard() {
       .replace(/[^a-z0-9]+/g, "-")
       .replace(/^-|-$/g, "")
     setFormData({ ...formData, name, slug })
+  }
+
+  const toggleRepSelection = (repId: number) => {
+    setSelectedReps((prev) =>
+      prev.includes(repId) ? prev.filter((id) => id !== repId) : [...prev, repId]
+    )
   }
 
   const handleToggleActive = async (tradeshowId: number, e: React.MouseEvent) => {
@@ -350,7 +372,7 @@ export default function AdminDashboard() {
               className="border-2"
             >
               <Users className="h-4 w-4 mr-2" />
-              Manage Sales Reps
+              Manage Sales Managers
             </Button>
             <Button
               onClick={() => setShowCreateModal(true)}
@@ -640,6 +662,38 @@ export default function AdminDashboard() {
                   />
                   <p className="text-xs text-gray-500 mt-1">
                     If set, this country will be pre-selected in the form for this tradeshow
+                  </p>
+                </div>
+
+                <div>
+                  <label className="block text-sm font-semibold text-gray-900 mb-2">Assign Sales Managers</label>
+                  <div className="border-2 border-gray-300 rounded-lg p-3 max-h-48 overflow-y-auto bg-white">
+                    {reps.length === 0 ? (
+                      <p className="text-sm text-gray-500">No sales managers available</p>
+                    ) : (
+                      <div className="space-y-2">
+                        {reps.map((rep) => (
+                          <label
+                            key={rep.id}
+                            className="flex items-center gap-3 p-2 hover:bg-gray-50 rounded cursor-pointer"
+                          >
+                            <input
+                              type="checkbox"
+                              checked={selectedReps.includes(rep.id)}
+                              onChange={() => toggleRepSelection(rep.id)}
+                              className="w-4 h-4 text-[rgb(27,208,118)] border-gray-300 rounded focus:ring-[rgb(27,208,118)]"
+                            />
+                            <div className="flex-1">
+                              <div className="text-sm font-medium text-gray-900">{rep.name}</div>
+                              <div className="text-xs text-gray-500">{rep.email}</div>
+                            </div>
+                          </label>
+                        ))}
+                      </div>
+                    )}
+                  </div>
+                  <p className="text-xs text-gray-500 mt-1">
+                    Select which sales managers can access this tradeshow. {selectedReps.length} manager{selectedReps.length !== 1 ? "s" : ""} selected.
                   </p>
                 </div>
 
