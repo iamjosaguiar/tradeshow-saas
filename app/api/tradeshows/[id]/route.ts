@@ -95,13 +95,28 @@ export async function PATCH(request: NextRequest, { params }: { params: { id: st
     const tradeshowId = parseInt(params.id)
     const body = await request.json()
 
-    const { name, description, location, startDate, endDate, defaultCountry, isActive, activeCampaignTagName, assignedReps } = body
+    const { name, slug, description, location, startDate, endDate, defaultCountry, isActive, activeCampaignTagName, assignedReps } = body
 
-    // Update tradeshow
+    // If slug is being changed, validate it doesn't already exist (within tenant)
+    if (slug) {
+      const existing = await sql`
+        SELECT id FROM tradeshows
+        WHERE slug = ${slug}
+          AND id != ${tradeshowId}
+          AND tenant_id = (SELECT tenant_id FROM tradeshows WHERE id = ${tradeshowId})
+      `
+
+      if (existing.length > 0) {
+        return NextResponse.json({ error: "Tradeshow with this slug already exists" }, { status: 400 })
+      }
+    }
+
+    // Update tradeshow (slug can only be updated by admins - already enforced by endpoint auth)
     await sql`
       UPDATE tradeshows
       SET
         name = ${name},
+        slug = COALESCE(${slug}, slug),
         description = ${description},
         location = ${location},
         start_date = ${startDate},
